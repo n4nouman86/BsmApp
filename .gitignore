@@ -1,0 +1,18 @@
+# .NET build output
+**/bin/
+**/obj/
+
+# React dependencies and build output
+**/node_modules/
+**/dist/
+
+# Local environment files
+**/.env
+**/.env.*
+!**/.env.example
+
+# IDE and OS files
+.vs/
+.vscode/*.log
+.DS_Store
+Thumbs.db

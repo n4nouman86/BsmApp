@@ -1,0 +1,42 @@
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject DialogService DialogService
+
+@if (Input is null)
+{
+    <em>Loading...</em>
+}
+else
+{
+    <EditForm Model="Input" OnValidSubmit="Save">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger" />
+
+        <RadzenStack Gap="1rem">
+
+            <RadzenFieldset Text="Whitelisted IP Info">
+                <RadzenStack Gap="0.5rem">
+                    <RadzenRow AlignItems="AlignItems.Center">
+                        <RadzenColumn Size="4"><RadzenLabel Text="IP Address" /></RadzenColumn>
+                        <RadzenColumn Size="8">
+                            <RadzenTextBox @bind-Value="Input.IpAddress" class="w-100" />
+                            <ValidationMessage For="() => Input.IpAddress" class="text-danger" />
+                        </RadzenColumn>
+                    </RadzenRow>
+                    <RadzenRow AlignItems="AlignItems.Start">
+                        <RadzenColumn Size="4" class="pt-1"><RadzenLabel Text="Description" /></RadzenColumn>
+                        <RadzenColumn Size="8">
+                            <RadzenTextArea @bind-Value="Input.Description" Rows="3" class="w-100" />
+                            <ValidationMessage For="() => Input.Description" class="text-danger" />
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenStack>
+            </RadzenFieldset>
+
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                <RadzenButton ButtonType="ButtonType.Submit" Text="Save" ButtonStyle="ButtonStyle.Primary" />
+                <RadzenButton ButtonType="ButtonType.Button" Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
+            </RadzenStack>
+
+        </RadzenStack>
+    </EditForm>
+}

@@ -1,0 +1,78 @@
+﻿@page "/InvoiceEResponse/{Id:guid}"
+@attribute [Authorize(Roles = "Agent")]
+<PageTitle>Invoice Payment</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> contextFactory
+@inject MastercardService mastercardService
+@inject IJSRuntime js
+
+<PageHeading HeadingText="Invoice Payment" />
+
+<RadzenRow>
+    <RadzenColumn SizeMD="6">
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <RadzenAlert AlertStyle="AlertStyle.Danger">
+                @ErrorMessage
+            </RadzenAlert>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(SuccessMessage))
+        {
+            <RadzenAlert AlertStyle="AlertStyle.Success">
+                @SuccessMessage
+            </RadzenAlert>
+        }
+
+        @if (Invoice is null)
+        {
+            <em>Please wait while we are processing...</em>
+        }
+        else
+        {
+            <RadzenCard>
+                <RadzenTable>
+                    <RadzenTableRow>
+                        <RadzenTableCell width="200"><strong>Invoice No:</strong></RadzenTableCell>
+                        <RadzenTableCell>@string.Concat("AC", Invoice.InvoiceNo)</RadzenTableCell>
+                    </RadzenTableRow>
+                    <RadzenTableRow>
+                        <RadzenTableCell><strong>Due Date:</strong></RadzenTableCell>
+                        <RadzenTableCell>@Invoice.DueDate.ToString("dd MMM yyyy")</RadzenTableCell>
+                    </RadzenTableRow>
+                    <RadzenTableRow>
+                        <RadzenTableCell><strong>Service From:</strong></RadzenTableCell>
+                        <RadzenTableCell>@Invoice.ServiceFrom.ToString("dd MMM yyyy")</RadzenTableCell>
+                    </RadzenTableRow>
+                    <RadzenTableRow>
+                        <RadzenTableCell><strong>Service To:</strong></RadzenTableCell>
+                        <RadzenTableCell>@Invoice.ServiceTo.ToString("dd MMM yyyy")</RadzenTableCell>
+                    </RadzenTableRow>
+                    <RadzenTableRow>
+                        <RadzenTableCell><strong>Total Cost:</strong></RadzenTableCell>
+                        <RadzenTableCell>@Invoice.TotalCost.ToString("C2")</RadzenTableCell>
+                    </RadzenTableRow>
+                    <RadzenTableRow>
+                        <RadzenTableCell><strong>Paid On:</strong></RadzenTableCell>
+                        <RadzenTableCell>@Invoice.PaidOn?.ToString("dd MMM yyyy")</RadzenTableCell>
+                    </RadzenTableRow>
+                    <RadzenTableRow>
+                        <RadzenTableCell><strong>Order Id:</strong></RadzenTableCell>
+                        <RadzenTableCell>@Invoice.Id</RadzenTableCell>
+                    </RadzenTableRow>
+                </RadzenTable>
+
+                <br />
+
+                <RadzenButton Click="Print">
+                    Print
+                </RadzenButton>
+            </RadzenCard>
+        }
+    </RadzenColumn>
+</RadzenRow>
+
+
+
+
+

@@ -1,0 +1,54 @@
+﻿@page "/PaymentRequestFromEdit/{Id:int}"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Edit Payment Request From</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> contextFactory
+@inject NavigationManager navigationManager
+
+<PageHeading HeadingText="Edit Payment Request From" />
+
+<RadzenRow>
+    <RadzenColumn SizeMD="4">
+        <RadzenCard>
+            <EditForm Model="Input" OnValidSubmit="UpdatePaymentRequestFrom">
+                <DataAnnotationsValidator />
+
+                <RadzenStack>
+                    <RadzenStack Gap="0">
+                        <RadzenLabel>From Name</RadzenLabel>
+                        <RadzenTextBox @bind-Value="Input.FromName" />
+                        <ValidationMessage For="@(() => Input.FromName)" />
+                    </RadzenStack>
+
+                    <RadzenStack Gap="0">
+                        <RadzenLabel>Server Host</RadzenLabel>
+                        <RadzenTextBox @bind-Value="Input.ServerHost" />
+                        <ValidationMessage For="@(() => Input.ServerHost)" />
+                    </RadzenStack>
+
+                    <RadzenStack Gap="0">
+                        <RadzenLabel>Server Port</RadzenLabel>
+                        <RadzenNumeric @bind-Value="Input.ServerPort" />
+                        <ValidationMessage For="@(() => Input.ServerPort)" />
+                    </RadzenStack>
+
+                    <RadzenStack Gap="0">
+                        <RadzenLabel>User Name</RadzenLabel>
+                        <RadzenTextBox @bind-Value="Input.UserName" />
+                        <ValidationMessage For="@(() => Input.UserName)" />
+                    </RadzenStack>
+
+                    <RadzenStack Gap="0">
+                        <RadzenLabel>Password</RadzenLabel>
+                        <RadzenPassword @bind-Value="Input.Password" />
+                        <ValidationMessage For="@(() => Input.Password)" />
+                    </RadzenStack>
+
+                    <div>
+                        <RadzenButton Text="Update" ButtonType="ButtonType.Submit" />
+                    </div>
+                </RadzenStack>
+            </EditForm>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>

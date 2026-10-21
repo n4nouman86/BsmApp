@@ -1,0 +1,39 @@
+@page "/LeadExport-tps1099"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Export Lead</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IJSRuntime JS
+
+<PageHeading HeadingText="Export Leads" />
+
+<RadzenCard>
+    <RadzenFieldset Text="Filter">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" Gap="1rem" Wrap="FlexWrap.Wrap">
+            <RadzenStack Gap="0">
+                <RadzenLabel>From Date</RadzenLabel>
+                <RadzenDatePicker @bind-Value="FromDate" DateFormat="dd-MMM-yyyy" />
+            </RadzenStack>
+
+            <RadzenStack Gap="0">
+                <RadzenLabel>To Date</RadzenLabel>
+                <RadzenDatePicker @bind-Value="ToDate" DateFormat="dd-MMM-yyyy" />
+            </RadzenStack>
+
+            <RadzenStack Gap="0">
+                <RadzenLabel>State (optional)</RadzenLabel>
+                <RadzenDropDown @bind-Value="State" Data="States" TextProperty="Text" ValueProperty="Text" AllowClear AllowFiltering 
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" />
+            </RadzenStack>
+
+            <RadzenStack>
+                <RadzenButton Text="Export CSV"
+                              Icon="download"
+                              ButtonStyle="ButtonStyle.Primary"
+                              IsBusy="isExporting"
+                              BusyText="Exporting..."
+                              Click="ExportCsv" />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenFieldset>
+</RadzenCard>

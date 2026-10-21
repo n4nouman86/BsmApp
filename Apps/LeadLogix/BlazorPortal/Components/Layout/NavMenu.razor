@@ -1,0 +1,148 @@
+﻿@implements IDisposable
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider authProvider
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+
+<RadzenMenu Responsive>
+    <RadzenMenuItem>
+        <Template>
+            <RadzenImage Path="@AppInfo.Logo" Style="width:46px;" />
+        </Template>
+    </RadzenMenuItem>
+
+
+    <AuthorizeView Roles="Super Admin">
+        <Authorized>
+            <RadzenMenuItem Text="Dashboard" Path="/DashboardSuperAdmin" Icon="dashboard" />
+
+            <RadzenMenuItem Text="App Users" Icon="group">
+                <RadzenMenuItem Text="Add New User" Path="AppUserCreate" Icon="add" />
+                <RadzenMenuItem Text="Search Users" Path="AppUserIndex" Icon="list" />
+                <RadzenMenuItem Text="Whitelisted IPs" Path="WhitelistedIpIndex" Icon="shield" />
+            </RadzenMenuItem>
+
+            <RadzenMenuItem Text="Agents" Icon="support_agent">
+                <RadzenMenuItem Text="Add New Agent" Path="AgentCreate" Icon="add" />
+                <RadzenMenuItem Text="Search Agents" Path="AgentIndex" Icon="list" />
+                <RadzenMenuItem Text="Agents Status" Path="/AgentStatus" Icon="toggle_on" />
+            </RadzenMenuItem>
+
+            <RadzenMenuItem Text="Leads" Icon="stacks">
+                <RadzenMenuItem Text="Add New Lead" Path="LeadCreate" Icon="add" />
+                <RadzenMenuItem Text="Transfer Lead" Path="LeadTransfer" Icon="send" />
+                <RadzenMenuItem Text="Search Leads" Path="LeadIndex" Icon="list" />
+                <RadzenMenuItem Text="Called Leads" Path="CalledLeadIndex" Icon="call" />
+                <RadzenMenuItem Text="Disposition Leads" Path="DispositionLead" Icon="checkbook" />
+                <RadzenMenuItem Text="Recent Leads" Path="RecentLead" Icon="schedule" />
+                <RadzenMenuItem Text="Lead Setting" Path="LeadSetting" Icon="tune" />
+            </RadzenMenuItem>
+
+            <RadzenMenuItem Text="Invoices" Icon="request_quote">
+                <RadzenMenuItem Text="Search Invoice" Path="InvoiceIndex" Icon="list" />
+                <RadzenMenuItem Text="Default Invoice" Path="InvoiceDefault" Icon="disabled_by_default" />
+
+                <RadzenMenuItem Text="Banks" Icon="account_balance">
+                    <RadzenMenuItem Text="Add New Bank" Path="InvoiceBankCreate" Icon="add" />
+                    <RadzenMenuItem Text="Search Bank" Path="InvoiceBankIndex" Icon="list" />
+                </RadzenMenuItem>
+
+                <RadzenMenuItem Text="From" Icon="corporate_fare">
+                    <RadzenMenuItem Text="Add New From" Path="InvoiceFromCreate" Icon="add" />
+                    <RadzenMenuItem Text="Search From" Path="InvoiceFromIndex" Icon="list" />
+                </RadzenMenuItem>
+            </RadzenMenuItem>
+
+            <RadzenMenuItem Text="Bonus" Icon="analytics">
+                <RadzenMenuItem Text="Bonus" Path="BonusIndex" Icon="receipt" />
+                <RadzenMenuItem Text="Employees" Path="EmployeeIndex" Icon="badge" />
+            </RadzenMenuItem>
+        </Authorized>
+    </AuthorizeView>
+
+
+
+    <AuthorizeView Roles="Verifier">
+        <Authorized>
+            <RadzenMenuItem Text="Dashboard" Path="/DashboardVerifier" Icon="dashboard" />
+            <RadzenMenuItem Text="Agents Status" Path="/AgentStatus" Icon="support_agent" />
+            <RadzenMenuItem Text="Transfer Lead" Path="/LeadTransfer" Icon="send" />
+            <RadzenMenuItem Text="Recent Transfered" Path="/RecentTransfered" Icon="list" />
+        </Authorized>
+    </AuthorizeView>
+
+
+
+
+    <AuthorizeView Roles="Agent">
+        <Authorized>
+            <RadzenMenuItem Text="Dashboard" Path="/DashboardAgent" Icon="dashboard" />
+            <RadzenMenuItem Text="Leads" Path="/AgentLead" Icon="send" />
+            <RadzenMenuItem Text="Agent Setting" Path="/AgentSetting" Icon="settings" />
+        </Authorized>
+    </AuthorizeView>
+
+
+
+
+    <AuthorizeView Roles="QA">
+        <Authorized>
+            <RadzenMenuItem Text="Dashboard" Path="/DashboardQA" Icon="dashboard" />
+            <RadzenMenuItem Text="QA Leads" Path="/QALeadIndex" Icon="list" />
+        </Authorized>
+    </AuthorizeView>
+
+
+    
+
+    <AuthorizeView Roles="Super Admin,QA,Agent">
+        <Authorized>
+            <RadzenMenuItem Path="/NotiIndex" Icon="globe">
+                <Template>
+                    Notifications
+                    @if (notiCount > 0)
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Danger" class="ms-1">@notiCount</RadzenBadge>
+                    }
+                </Template>
+            </RadzenMenuItem>
+        </Authorized>
+    </AuthorizeView>
+
+
+
+
+    <AuthorizeView>
+        <Authorized>
+            <RadzenMenuItem Text="Settings" Icon="manage_accounts">
+                <RadzenMenuItem Text="@userName" Icon="account_circle" />
+                <RadzenMenuItem Text="Change Password" Path="/Account/Manage/ChangePassword" Icon="password" />
+            </RadzenMenuItem>
+
+            <RadzenMenuItem>
+                <Template>
+                    <div>
+                        <form action="Account/Logout" method="post">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                            <RadzenButton 
+                                class="rz-float-right"
+                                Icon="logout"
+                                Text="Logout"
+                                ButtonType="ButtonType.Submit"
+                                Size="ButtonSize.Medium"
+                                ButtonStyle="ButtonStyle.Light"
+                                Variant="Variant.Text" />
+                        </form>
+                    </div>
+                </Template>
+            </RadzenMenuItem>
+        </Authorized>
+    </AuthorizeView>
+</RadzenMenu>
+
+
+
+
+
+

@@ -13,4 +13,10 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\Apps\LeadLogix\BlazorPortal\Entities\vwcTotalDayTransfer.cs" Link="Features\LeadLogix\Dashboard\Models\vwcTotalDayTransfer.cs" />
+    <Compile Include="..\Apps\LeadLogix\BlazorPortal\Models\spTransferDailyReport.cs" Link="Features\LeadLogix\Dashboard\Models\spTransferDailyReport.cs" />
+    <Compile Include="..\Apps\LeadLogix\BlazorPortal\Models\SpTransferWeeklyReport.cs" Link="Features\LeadLogix\Dashboard\Models\SpTransferWeeklyReport.cs" />
+  </ItemGroup>
+
 </Project>

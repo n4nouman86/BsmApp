@@ -1,0 +1,71 @@
+﻿@foreach (var item in Agents)
+{
+    <div class="col-md-3 mb-5">
+        <RadzenCard Variant="Variant.Filled" class="@item.CardColor">
+            <RadzenFieldset>
+
+                <HeaderTemplate>
+                    <RadzenText class="@item.CardTextColor"><b>@item.FullName</b></RadzenText>
+                </HeaderTemplate>
+
+                <ChildContent>
+                    <div class="text-center">
+
+                        <RadzenText TextStyle="TextStyle.Body2" class="@item.CardTextColor"><b>Status Info</b></RadzenText>
+
+                        <RadzenText TextStyle="TextStyle.Body2" class="@item.CardTextColor">
+                            <b>Campaign:</b> @item.CampaignStatus <br />
+                            <b>Agent: </b> @(item.IsOnline ? "Online" : "Offline")
+                        </RadzenText>
+
+                        <br />
+
+                        <RadzenText TextStyle="TextStyle.Body2" class="@item.CardTextColor"><b>Schedule Info</b></RadzenText>
+
+                        <RadzenText TextStyle="TextStyle.Body2" class="@item.CardTextColor">
+                            <b>From: </b> @item.ScheduleFrom?.ToServerDateTimeOffset().DateTime.ToString("hh':'mm tt")<br />
+                            <b>To:</b> @item.ScheduleTo?.ToServerDateTimeOffset().DateTime.ToString("hh':'mm tt")
+                        </RadzenText>
+
+                        <br />
+
+                        <RadzenText TextStyle="TextStyle.Body2" class="@item.CardTextColor"><b>Timer Info</b></RadzenText>
+
+                        <RadzenText TextStyle="TextStyle.Body2" class="@item.CardTextColor">
+                            <b>Pause Till:</b> @item.PauseTimer.ToString("N1") mints
+                        </RadzenText>
+
+                        <br />
+
+                        <RadzenText TextStyle="TextStyle.Body2" class="@item.CardTextColor"><b>Caps Info</b></RadzenText>
+
+                        <RadzenText TextStyle="TextStyle.Body2" class="@item.CardTextColor">
+                            Daily Caps: <b>@item.TodayTransfer</b> out of <b>@item.DailyCap</b>
+                        </RadzenText>
+
+                        <br />
+                        <RadzenText TextStyle="TextStyle.Body2" class="@item.CardTextColor"><b>Transfer Info</b></RadzenText>
+
+                        <RadzenText TextStyle="TextStyle.Body2" class="@item.CardTextColor">
+                            Cool Off Time: <b>@item.LastTransfer</b> mints
+                        </RadzenText>
+
+                        <br />
+                        <RadzenText TextStyle="TextStyle.Body2" class="@item.CardTextColor"><b>States Info</b></RadzenText>
+
+                        <RadzenText TextStyle="TextStyle.Body2" class="@item.CardTextColor">
+                            @item.States
+                        </RadzenText>
+                    </div>
+                </ChildContent>
+            </RadzenFieldset>
+        </RadzenCard>
+    </div>
+}
+
+
+
+@code {
+    [Parameter]
+    public IEnumerable<vwStatusAgent> Agents { get; set; } = Enumerable.Empty<vwStatusAgent>();
+}

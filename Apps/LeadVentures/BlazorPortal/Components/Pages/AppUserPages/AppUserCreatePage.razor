@@ -1,0 +1,100 @@
+﻿@page "/AppUserCreate"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Add New User</PageTitle>
+
+@inject UserManager<ApplicationUser> userManager
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NotificationService notify
+
+<PageHeading HeadingText="Add New User" />
+
+<RadzenRow>
+    <RadzenColumn SizeMD="6">
+        <RadzenCard>
+            <ErrorMessage Message="@ErrorMessage" />
+
+            <EditForm Model="Input" OnValidSubmit="RegisterUser">
+                <DataAnnotationsValidator />
+
+                <RadzenFieldset Text="User Info">
+                    <RadzenStack>
+                        <RadzenStack Gap="0">
+                            <RadzenLabel>Full Name</RadzenLabel>
+                            <RadzenTextBox @bind-Value="Input.FullName" />
+                            <ValidationMessage For="() => Input.FullName" class="rz-messages-error" />
+                        </RadzenStack>
+
+                        <RadzenStack Gap="0">
+                            <RadzenLabel>Email</RadzenLabel>
+                            <RadzenTextBox @bind-Value="Input.Email" AutoCompleteType="AutoCompleteType.Off" />
+                            <ValidationMessage For="() => Input.Email" class="rz-messages-error" />
+                        </RadzenStack>
+
+                        <RadzenStack Gap="0">
+                            <RadzenLabel>Password</RadzenLabel>
+                            <RadzenTextBox @bind-Value="Input.Password" AutoCompleteType="AutoCompleteType.Off" />
+                            <ValidationMessage For="() => Input.Password" class="rz-messages-error" />
+                        </RadzenStack>
+
+                        <RadzenStack Gap="0">
+                            <RadzenLabel>Confirm Password</RadzenLabel>
+                            <RadzenTextBox @bind-Value="Input.ConfirmPassword" />
+                            <ValidationMessage For="() => Input.ConfirmPassword" class="rz-messages-error" />
+                        </RadzenStack>
+
+                        <RadzenStack Gap="0">
+                            <RadzenLabel>Select Time Zone</RadzenLabel>
+                            <RadzenDropDown @bind-Value="Input.TimeZoneInfoId"
+                                            Data="TimeZones"
+                                            ValueProperty="Id"
+                                            TextProperty="Text"
+                                            Change="GetSqlDateTime"
+                                            AllowFiltering
+                                            AllowVirtualization
+                                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
+                            </RadzenDropDown>
+                            <ValidationMessage For="() => Input.TimeZoneInfoId" class="rz-messages-error" />
+                        </RadzenStack>
+
+                        @if (Input.SqlDateTime.HasValue)
+                        {
+                            <RadzenStack>
+                                <RadzenText TextStyle="TextStyle.Subtitle2">
+                                    @Input.TimeZoneInfoId : @Input.SqlDateTime.Value.ToDateTimeString()
+                                </RadzenText>
+                            </RadzenStack>
+                        }
+
+                        <RadzenStack>
+                            <RadzenLabel>Select Role</RadzenLabel>
+                            <RadzenRadioButtonList @bind-Value="Input.RoleName" Name="RoleList">
+                                <Items>
+                                    <RadzenRadioButtonListItem Text="Agent" Value="@("Agent")" />
+                                    <RadzenRadioButtonListItem Text="Verifier" Value="@("Verifier")" />
+                                    <RadzenRadioButtonListItem Text="QA" Value="@("QA")" />
+                                    <RadzenRadioButtonListItem Text="Super Admin" Value="@("Super Admin")" />
+                                </Items>
+                            </RadzenRadioButtonList>
+                        </RadzenStack>
+
+                        <div>
+                            <RadzenButton ButtonType="ButtonType.Submit">Create</RadzenButton>
+                        </div>
+                    </RadzenStack>
+                </RadzenFieldset>
+            </EditForm>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,53 @@
+@page "/PerformanceIndex"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Performances</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> contextFactory
+@inject DialogService dialogService
+@inject NavigationManager navManager
+
+<PageHeading HeadingText="Performances" />
+
+<div class="mb-3">
+    <RadzenButton Icon="add" Text="Add New" ButtonStyle="ButtonStyle.Primary" Click="OpenCreate" />
+</div>
+
+<RadzenCard>
+    @if (Performances is null)
+    {
+        <em>Loading...</em>
+    }
+    else
+    {
+        <RadzenDataGrid Data="@Performances" AllowPaging PageSize="10">
+            <Columns>
+                <RadzenDataGridColumn Property="PerformancDate" Title="Date" FormatString="{0:MMM dd, yyyy}" />
+
+                <RadzenDataGridColumn Property="KGTarget" Title="KG Target" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn Property="KGReps" Title="KG Reps" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn Property="KGVerifiers" Title="KG Verifiers" TextAlign="TextAlign.Center" />
+
+                <RadzenDataGridColumn Property="BSMTarget" Title="BSM Target" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn Property="BSMReps" Title="BSM Reps" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn Property="BSMVerifiers" Title="BSM Verifiers" TextAlign="TextAlign.Center" />
+
+                <RadzenDataGridColumn Property="KGDialerCost" Title="KG Dialer Cost" FormatString="{0:C}" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn Property="BSMDialerCost" Title="BSM Dialer Cost" FormatString="{0:C}" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn Property="DurketaDialerCost" Title="Durketa Dialer Cost" FormatString="{0:C}" TextAlign="TextAlign.Center" />
+
+                <RadzenDataGridColumn Title="Action" TextAlign="TextAlign.Center" Width="160px">
+                    <Template Context="model">
+                        <RadzenButton Icon="list" Size="ButtonSize.ExtraSmall" ButtonStyle="ButtonStyle.Info"
+                            Click="@(() => navManager.NavigateTo($"PerformanceLines/{model.Id}"))" />
+
+                        <RadzenButton Icon="edit" Size="ButtonSize.ExtraSmall" ButtonStyle="ButtonStyle.Secondary"
+                            class="ms-1" Click="@(() => OpenEdit(model))" />
+
+                        <RadzenButton Icon="delete" Size="ButtonSize.ExtraSmall" ButtonStyle="ButtonStyle.Danger"
+                            class="ms-1" Click="@(() => ConfirmDelete(model.Id))" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenCard>

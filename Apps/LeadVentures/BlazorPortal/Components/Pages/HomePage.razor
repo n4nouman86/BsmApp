@@ -1,0 +1,61 @@
+﻿@page "/{Param?}"
+@page "/home"
+@attribute [Authorize]
+<PageTitle>Home</PageTitle>
+
+@inject NavigationManager navManager
+@inject AuthenticationStateProvider authProvider
+
+<PageHeading HeadingText="Home" />
+
+<em>Loading...</em>
+
+
+@code{
+    [Parameter]
+    public string? Param { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authProvider.GetAuthenticationStateAsync();
+
+        if (authState is null || authState.User.Identity is null)
+        {
+            navManager.NavigateTo("/Account/Login");
+        }
+        else
+        {
+            if (authState.User.IsInRole("Super Admin"))
+            {
+                navManager.NavigateTo("/DashboardSuperAdmin");
+            }
+            else if (authState.User.IsInRole("Verifier"))
+            {
+                navManager.NavigateTo("/DashboardVerifier");
+            }
+            else if (authState.User.IsInRole("Agent"))
+            {
+                navManager.NavigateTo("/DashboardAgent");
+            }
+            else if (authState.User.IsInRole("QA"))
+            {
+                navManager.NavigateTo("/DashboardQA");
+            }
+        }
+    }
+
+
+
+
+    protected override void OnParametersSet()
+    {
+        if (Param == "y")
+        {
+            navManager.Refresh(true);
+        }   
+    }
+}
+
+
+

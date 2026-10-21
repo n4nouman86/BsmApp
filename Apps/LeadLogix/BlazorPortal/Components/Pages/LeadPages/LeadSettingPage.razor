@@ -1,0 +1,53 @@
+@page "/LeadSetting"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Lead Setting</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NotificationService notify
+
+<PageHeading HeadingText="Lead Setting" />
+
+<RadzenCard>
+    @if (Setting is null)
+    {
+        <em>Loading...</em>
+    }
+    else
+    {
+        <EditForm Model="Setting" FormName="LeadSettingForm" OnValidSubmit="SaveSetting">
+            <DataAnnotationsValidator />
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <RadzenLabel>Check Transfer Days</RadzenLabel>
+                        <RadzenNumeric @bind-Value="Setting.CheckTransferDays" class="w-100" Min="0" />
+                        <ValidationMessage For="() => Setting.CheckTransferDays" class="text-danger" />
+                    </div>
+
+                    <div class="mt-3">
+                        <RadzenButton ButtonType="ButtonType.Submit" Text="Save" Icon="save" />
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    }
+</RadzenCard>
+
+@code {
+    private LeadSetting? Setting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        Setting = await db.LeadSettings.FindAsync(1);
+    }
+
+    private async Task SaveSetting()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.LeadSettings.Update(Setting!);
+        await db.SaveChangesAsync();
+        notify.Notify(NotificationSeverity.Success, "Saved", "Lead setting updated successfully.");
+    }
+}

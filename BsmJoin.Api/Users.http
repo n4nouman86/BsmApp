@@ -1,0 +1,21 @@
+@baseUrl = http://localhost:5049
+@accessToken = replace-with-admin-access-token
+@userId = replace-with-user-id
+
+### Local development demo login (not available in production)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@bsmjoin.test",
+  "password": "Demo@12345"
+}
+
+### Change a user's password (requires an Admin access token)
+POST {{baseUrl}}/api/users/{{userId}}/password
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "newPassword": "NewPassword@123"
+}

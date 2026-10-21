@@ -13,6 +13,15 @@
 
 # IDE and OS files
 .vs/
+**/.vs/
+**/*.user
 .vscode/*.log
 .DS_Store
 Thumbs.db
+
+# Local development settings for imported applications may contain secrets
+Apps/**/appsettings*.json
+
+# Agent and browser automation artifacts
+**/.superpowers/
+**/.playwright-mcp/

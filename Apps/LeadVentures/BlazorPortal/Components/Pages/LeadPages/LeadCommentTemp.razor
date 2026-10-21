@@ -1,0 +1,32 @@
+﻿
+
+<RadzenCard>
+    <RadzenStack Orientation="Orientation.Horizontal">
+        <div>
+            <RadzenGravatar Email="@LeadComment.FullName" />
+        </div>
+        <div>
+            <div>
+                <RadzenStack Gap="0">
+                    <RadzenText Text="@LeadComment.FullName" TextStyle="TextStyle.Subtitle2" class="my-0" />
+                    <RadzenText Text="@LeadComment.CommentOn.ToLacalDateTimeOffset(ZonTimeInfoId).ToString("dd MMM, hh':'mm tt")" TextStyle="TextStyle.Overline" />
+                </RadzenStack>
+            </div>
+            <div>
+                <RadzenText TextStyle="TextStyle.Body2">
+                    @LeadComment.Comment
+                </RadzenText>
+            </div>
+        </div>
+    </RadzenStack>
+</RadzenCard>
+
+
+
+@code {
+    [Parameter]
+    public vwLeadComment LeadComment { get; set; } = new vwLeadComment();
+    [Parameter]
+    public string ZonTimeInfoId { get; set; } = "";
+
+}

@@ -1,0 +1,20 @@
+services:
+  blazorportal:
+    image: leadventures-app
+    build:
+      context: .
+      dockerfile: BlazorPortal/Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      - TZ=Asia/Karachi
+      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+      - LANG=en_US.UTF-8
+    restart: unless-stopped
+    container_name: leadventures-app
+    networks:
+      - web
+
+networks:
+  web:
+    external: true

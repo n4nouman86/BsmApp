@@ -1,0 +1,64 @@
+@page "/NotiIndex"
+@attribute [Authorize]
+<PageTitle>Notification</PageTitle>
+
+@inject NavigationManager navManager
+@inject AuthenticationStateProvider authProvider
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject UserManager<ApplicationUser> userManager
+
+
+<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+
+    <PageHeading HeadingText="Notifications" />
+
+    <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                  Variant="Variant.Outlined"
+                  Text="Mark all as read"
+                  Icon="done_all"
+                  Click="MarkAllAsReadAsync" />
+</RadzenStack>
+
+<br />
+
+@if (Notifications is null)
+{
+    <em>Loading...</em>
+}
+else
+{
+    @if (Notifications.Any())
+    {
+        foreach (var item in Notifications)
+        {
+            <RadzenButton ButtonStyle="@(item.IsRead ? ButtonStyle.Base : ButtonStyle.Info)"
+                            Shade="Shade.Lighter"
+                            Click="() => GotoComment(item.Id, item.NotiUrl)"
+                            class="w-100 text-start border-bottom rz-border-radius-0 mb-0" 
+                            Style="text-transform:none">
+
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem">
+                    <RadzenIcon Icon="@(item.IsRead ? "chat_bubble_outline" : "chat_bubble")"
+                                class="@(item.IsRead ? "rz-color-secondary" : "rz-color-primary")" />
+         
+                    <RadzenStack Gap="0" class="flex-grow-1 text-start">
+                        <RadzenText TextStyle="@(item.IsRead ? TextStyle.Body2 : TextStyle.Subtitle2)" class="mb-0 ">
+                            @item.NotiText
+                        </RadzenText>
+                    
+                        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary mb-0">
+                            @item.CreateOn.ToLacalDateTimeOffset(AppUser!.TimeZoneInfoId).DateTime.ToDateTimeString()
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenButton>
+        }
+    }
+    else
+    {
+        <RadzenStack AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" class="rz-p-6">
+            <RadzenIcon Icon="notifications_off" class="rz-color-secondary" Style="font-size:2.5rem" />
+            <RadzenText TextStyle="TextStyle.Body1" class="rz-color-secondary mt-2">You're all caught up!</RadzenText>
+        </RadzenStack>
+    }
+}

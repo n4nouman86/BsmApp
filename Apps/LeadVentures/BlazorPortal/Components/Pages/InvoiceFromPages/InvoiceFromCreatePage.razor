@@ -1,0 +1,60 @@
+﻿@page "/InvoiceFromCreate"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Add Invoice From</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> contextFactory
+@inject NavigationManager navManager
+
+<PageHeading HeadingText="Add Invoice From" />
+
+
+<div class="row">
+    <div class="col-md-6">
+        <RadzenCard>
+
+            <EditForm Model="Input" OnValidSubmit="CreateInvoiceFrom">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" />
+
+
+                <RadzenFieldset Text="Invoice From Info">
+                    
+                    <div class="mb-3">
+                        <RadzenLabel>Invoice By</RadzenLabel>
+                        <RadzenTextBox @bind-Value="Input.InvoiceBy" class="w-100" />
+                        <ValidationMessage For="() => Input.InvoiceBy" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenLabel>Mobile Number (optional)</RadzenLabel>
+                        <RadzenTextBox @bind-Value="Input.MobileNumber" class="w-100" />
+                        <ValidationMessage For="() => Input.MobileNumber" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenLabel>Land Line Number (optional)</RadzenLabel>
+                        <RadzenTextBox @bind-Value="Input.LandLineNumber" class="w-100" />
+                        <ValidationMessage For="() => Input.LandLineNumber" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenLabel>Email Address</RadzenLabel>
+                        <RadzenTextBox @bind-Value="Input.EmailAddress" class="w-100" />
+                        <ValidationMessage For="() => Input.EmailAddress" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenLabel>Address (optional)</RadzenLabel>
+                        <RadzenTextArea @bind-Value="Input.Address" class="w-100" />
+                        <ValidationMessage For="() => Input.Address" class="text-danger" />
+                    </div>
+
+                    <div class="">
+                        <RadzenButton ButtonType="ButtonType.Submit">Create</RadzenButton>
+                    </div>
+
+                </RadzenFieldset>
+            </EditForm>
+        </RadzenCard>
+    </div>
+</div>

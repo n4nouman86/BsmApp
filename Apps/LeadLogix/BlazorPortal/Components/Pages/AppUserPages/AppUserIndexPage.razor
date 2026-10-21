@@ -1,0 +1,82 @@
+﻿@page "/AppUserIndex"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>App Users</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageHeading HeadingText="Application Users" />
+
+<RadzenCard>
+    <RadzenFieldset Text="Search Info">
+        <EditForm Model="Input" OnValidSubmit="SearchAppUser">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                <RadzenLabel>Full Name</RadzenLabel>
+                <RadzenTextBox @bind-Value="Input.SearchTerm" />
+                <RadzenButton ButtonType="ButtonType.Submit">Search</RadzenButton>
+            </RadzenStack>
+        </EditForm>
+    </RadzenFieldset>
+</RadzenCard>
+
+<br />
+
+<RadzenCard>
+    @if (AppUsers is null)
+    {
+        <em>Loading...</em>
+    }
+    else
+    {
+        <RadzenDataGrid Data="@AppUsers" AllowPaging LoadData="LoadData" ShowPagingSummary Count="count" IsLoading="isLoading">
+
+            <Columns>
+                <RadzenDataGridColumn Property="FullName" Title="Full Name" />
+                <RadzenDataGridColumn Property="UserName" Title="UserName" />
+                
+                <RadzenDataGridColumn Property="LastSeen" Title="Last Seen" TextAlign="TextAlign.Center" Width="140px">
+                    <Template Context="appUser">
+                        @if (appUser.LastSeen == "Online")
+                        {
+                            <RadzenBadge Text="Online" BadgeStyle="BadgeStyle.Success" />
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrWhiteSpace(appUser.LastSeen))
+                            {
+                                <RadzenBadge Text="@appUser.LastSeen" BadgeStyle="BadgeStyle.Light" />
+                            }
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Property="Roles" Title="Roles" />
+
+                <RadzenDataGridColumn Property="TimeZoneInfoId" Title="Time Zone Info" />
+
+                <RadzenDataGridColumn Title="Lockout End On">
+                    <Template Context="appUser">
+                        @appUser.LockoutEnd?.ToString("MMM dd, yyyy hh:mm tt")
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Created On" TextAlign="TextAlign.Center" Width="120px">
+                    <Template Context="appUser">
+                        @appUser.CreateOn.ToString("MMM dd, yyyy")
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Action" TextAlign="TextAlign.Center" Width="80px">
+                    <Template Context="appUser">
+                        <RadzenLink Path="@String.Concat("AppUserEdit/", appUser.Id)">
+                            <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="@ButtonStyle.Secondary" />
+                        </RadzenLink>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenCard>
+
+
+
+

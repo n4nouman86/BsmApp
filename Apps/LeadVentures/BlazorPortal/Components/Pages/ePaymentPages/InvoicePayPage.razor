@@ -1,0 +1,94 @@
+﻿@page "/InvoiceEPay/{Id:guid}"
+@attribute [Authorize(Roles = "Agent")]
+<PageTitle>Pay Invoice</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> contextFactory
+@inject MastercardService mastercardService
+@inject NavigationManager navigationManager
+@inject IJSRuntime jsRuntime
+
+<PageHeading HeadingText="Pay Invoice" />
+
+<RadzenRow>
+    <RadzenColumn SizeMD="6">
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <RadzenAlert AlertStyle="AlertStyle.Danger">
+                @ErrorMessage
+            </RadzenAlert>
+        }
+
+        @if (Invoice is null)
+        {
+            <RadzenSkeleton />
+        }
+        else
+        {
+            <RadzenCard>
+                <RadzenTable>
+                    <RadzenTableRow>
+                        <RadzenTableCell width="200"><strong>Invoice No:</strong></RadzenTableCell>
+                        <RadzenTableCell>@string.Concat("AC", Invoice.InvoiceNo)</RadzenTableCell>
+                    </RadzenTableRow>
+                    <RadzenTableRow>
+                        <RadzenTableCell><strong>Due Date:</strong></RadzenTableCell>
+                        <RadzenTableCell>@Invoice.DueDate.ToString("dd MMM yyyy")</RadzenTableCell>
+                    </RadzenTableRow>
+                    <RadzenTableRow>
+                        <RadzenTableCell><strong>Service From:</strong></RadzenTableCell>
+                        <RadzenTableCell>@Invoice.ServiceFrom.ToString("dd MMM yyyy")</RadzenTableCell>
+                    </RadzenTableRow>
+                    <RadzenTableRow>
+                        <RadzenTableCell><strong>Service To:</strong></RadzenTableCell>
+                        <RadzenTableCell>@Invoice.ServiceTo.ToString("dd MMM yyyy")</RadzenTableCell>
+                    </RadzenTableRow>
+                    <RadzenTableRow>
+                        <RadzenTableCell><strong>Total Cost:</strong></RadzenTableCell>
+                        <RadzenTableCell>@Invoice.TotalCost.ToString("C2")</RadzenTableCell>
+                    </RadzenTableRow>
+                    <RadzenTableRow>
+                        <RadzenTableCell><strong>Paid On:</strong></RadzenTableCell>
+                        <RadzenTableCell>@Invoice.PaidOn?.ToString("dd MMM yyyy")</RadzenTableCell>
+                    </RadzenTableRow>
+                <RadzenTableRow>
+                <RadzenTableCell><strong>Payment Status:</strong></RadzenTableCell>
+            </RadzenTableRow>
+                </RadzenTable>
+
+                <br />
+
+                <RadzenButton Click="ProceedToPayment">
+                    Proceed to Payment
+                </RadzenButton>
+            </RadzenCard>
+        }
+    </RadzenColumn>
+</RadzenRow>
+
+
+
+<script src="https://mcbpk.gateway.mastercard.com/static/checkout/checkout.min.js" 
+        data-error="errorCallback" 
+        data-cancel="cancelCallback"></script>
+
+<script>
+    function startCheckout(sessionId) {
+        Checkout.configure({
+            session: {
+                id: sessionId
+            }
+        });
+
+        Checkout.showPaymentPage()
+    }
+
+    function errorCallback(error) {
+        console.log(JSON.stringify(error));
+    }
+
+    function cancelCallback() {
+        console.log('Payment cancelled');
+    }
+
+</script>
+

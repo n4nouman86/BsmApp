@@ -1,0 +1,25 @@
+@baseUrl = http://localhost:5049/api/leadventures/dashboard
+@accessToken = paste-admin-access-token-here
+
+### Latest seven recorded transfer days
+GET {{baseUrl}}/transfers
+Authorization: Bearer {{accessToken}}
+
+### Day report from LeadVentures database
+GET {{baseUrl}}/daily?date=2026-10-12
+Authorization: Bearer {{accessToken}}
+
+### Weekly report from LeadVentures database (inclusive)
+GET {{baseUrl}}/weekly?from=2026-10-05&to=2026-10-11
+Authorization: Bearer {{accessToken}}
+
+### Invalid date range: 400
+GET {{baseUrl}}/weekly?from=2026-10-12&to=2026-10-05
+Authorization: Bearer {{accessToken}}
+
+### Missing required date: 400
+GET {{baseUrl}}/daily
+Authorization: Bearer {{accessToken}}
+
+### No authentication: 401
+GET {{baseUrl}}/transfers

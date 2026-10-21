@@ -1,0 +1,71 @@
+﻿@page "/PaymentRequestIndex"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Payment Requests</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> contextFactory
+@inject NotificationService notificationService
+@inject NavigationManager navigationManager
+@inject DialogService dialogService
+@inject IJSRuntime js
+
+<PageHeading HeadingText="Payment Requests" />
+
+<br />
+
+<RadzenStack Orientation="Orientation.Horizontal">
+    <RadzenLink Path="/PaymentRequestCreate">
+        <RadzenButton Text="Create New" Icon="add" />
+    </RadzenLink>
+    
+    <RadzenButton Text="Show UnPaids" Click="UnpaidRequests" ButtonStyle="ButtonStyle.Danger" />
+</RadzenStack>
+
+<br />
+
+@if (Requests is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <RadzenDataGrid Data="Requests" Responsive AllowColumnPicking AllowColumnReorder AllowColumnResize>
+        <Columns>
+            <RadzenDataGridColumn Property="DueDate" Title="Due Date" FormatString="{0:dd MMM yyyy}" Width="110px" TextAlign="TextAlign.Center">
+                <FooterTemplate>
+                    <b>Invoices: @Requests.Count().ToString("N0")</b>
+                </FooterTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="FromName" Title="From" Width="200px">
+                <FooterTemplate>
+                    <b>Amount: @Requests.Sum(x => x.Amount).ToString("C0")</b>
+                </FooterTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="ClientName" Title="Client Name" Width="200px" />
+            <RadzenDataGridColumn Property="ClientEmail" Title="Client Email" Width="300px" />
+            <RadzenDataGridColumn Property="Description" Title="Description" />
+            <RadzenDataGridColumn Property="Amount" Title="Amount" FormatString="{0:C0}" Width="100px" TextAlign="TextAlign.Center" />
+            <RadzenDataGridColumn Title="Pay Link" Width="100px" TextAlign="TextAlign.Center">
+                <Template context="inv">
+                    <RadzenButton Text="Copy" Size="ButtonSize.ExtraSmall" Click="() => CopyLink(inv.Id)" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="PaidOn" Title="Paid On" FormatString="{0:dd MMM yyyy}" Width="110px" TextAlign="TextAlign.Center" />
+            <RadzenDataGridColumn Property="PaymentStatus" Title="Status" Width="110px" TextAlign="TextAlign.Center" />
+            <RadzenDataGridColumn Title="Action" Width="100px" TextAlign="TextAlign.Center">
+                <Template context="inv">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="8" JustifyContent="JustifyContent.Center">
+                        @if (inv.PaidOn is null)
+                        {
+                            <RadzenLink Path="@string.Concat("/PaymentRequestEdit/", inv.Id)">
+                                <RadzenButton Icon="edit" Size="ButtonSize.ExtraSmall" title="Edit" />
+                            </RadzenLink>
+
+                            <RadzenButton Icon="delete_forever" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall"
+                                          Click="() => DeleteRequest(inv.Id)" title="Delete payment request." />
+                        }
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}

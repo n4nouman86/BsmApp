@@ -1,0 +1,40 @@
+@page "/EmployeeIndex"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Employees</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject DialogService dialogService
+
+<PageHeading HeadingText="Employees" />
+
+<RadzenStack AlignItems="AlignItems.Start">
+    <RadzenButton Icon="add" Text="Add New Employee" ButtonStyle="ButtonStyle.Primary" Click="OpenCreate" />
+</RadzenStack>
+
+<br />
+
+<RadzenCard>
+    @if (Employees is null)
+    {
+        <em>Loading...</em>
+    }
+    else
+    {
+        <RadzenDataGrid Data="@Employees" EmptyText="No employees to display">
+
+            <Columns>
+                <RadzenDataGridColumn Property="Name" Title="Name" />
+                <RadzenDataGridColumn Property="StartDate" Title="Start Date" FormatString="{0:MMM dd, yyyy}" TextAlign="TextAlign.Center" Width="150px" />
+                <RadzenDataGridColumn Property="EndDate" Title="End Date" FormatString="{0:MMM dd, yyyy}" TextAlign="TextAlign.Center" Width="150px" />
+                <RadzenDataGridColumn Property="IsActive" Title="Active" TextAlign="TextAlign.Center" Width="100px" />
+
+                <RadzenDataGridColumn Title="Action" TextAlign="TextAlign.Center" Width="100px">
+                    <Template Context="employee">
+                        <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Secondary"
+                            Click="@(() => OpenEdit(employee.Id))" title="Edit" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenCard>

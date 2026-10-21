@@ -1,0 +1,380 @@
+﻿@page "/LeadEdit/{Id}"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Edit Lead</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NotificationService notiService
+
+<PageHeading HeadingText="Edit Lead" />
+
+<RadzenCard>
+    <RadzenFieldset Text="Agent Info">
+        @if (Agent is null)
+        {
+            <em>No Info...</em>
+        }
+        else
+        {
+            <RadzenRow>
+                <RadzenColumn>
+                    <RadzenStack>
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.Overline" class="">Full Name</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2"><b>@Agent.FullName</b></RadzenText>
+                        </RadzenStack>
+
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.Overline" class="">States</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2"><b>@Agent.States</b></RadzenText>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <RadzenColumn>
+                    <RadzenText TextStyle="TextStyle.Overline"><b>Verifier Notes</b></RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" Style="white-space:pre-wrap">@Agent.VerifierNotes</RadzenText>
+                </RadzenColumn>
+
+                <RadzenColumn>
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.Overline">Zip Codes</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">@Agent.ZipCodes</RadzenText>
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+        }
+    </RadzenFieldset>
+</RadzenCard>
+
+<br />
+
+
+@if (Input is null)
+{
+    <em>Loading...</em>
+}
+else
+{
+    <RadzenTemplateForm TItem="Lead" Data="Input" Submit="UpdateLead">
+        <RadzenRow>
+            <RadzenColumn SizeMD="6">
+                <RadzenCard>
+                    <RadzenFieldset Text="Lead Info">
+                        <RadzenStack>
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Select Agent</RadzenLabel>
+
+                                <RadzenDropDown Name="AgentId"
+                                                @bind-Value="Input.AgentId"
+                                                Data="Agents"
+                                                ValueProperty="Id"
+                                                TextProperty="Text"
+                                                AllowClear
+                                                AllowFiltering
+                                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" />
+
+                                <RadzenCustomValidator Component="AgentId" Validator="@(() => Input.AgentId != Guid.Empty)" Text="Select agent." />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Transfer On</RadzenLabel>
+                                <RadzenDatePicker Name="TransferOn" @bind-Value="Input.TransferOn" DateFormat="MMM dd, yyyy hh:mm tt" ShowTime />
+                                <RadzenDataAnnotationValidator Component="TransferOn" />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Phone Number</RadzenLabel>
+                                <RadzenTextBox Name="PhoneNumber" @bind-Value="Input.PhoneNumber" />
+                                <RadzenDataAnnotationValidator Component="PhoneNumber" />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Full Name</RadzenLabel>
+                                <RadzenTextBox Name="FullName" @bind-Value="Input.FullName" />
+                                <RadzenDataAnnotationValidator Component="FullName" />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Date Of Birth</RadzenLabel>
+                                <RadzenTextBox Name="DateOfBirth" @bind-Value="Input.DateOfBirth" />
+                                <RadzenDataAnnotationValidator Component="DateOfBirth" />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Address</RadzenLabel>
+                                <RadzenTextArea Name="Address" @bind-Value="Input.Address" Rows="3" />
+                                <RadzenDataAnnotationValidator Component="Address" />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Select State</RadzenLabel>
+
+                                <RadzenDropDown Name="StateId"
+                                                @bind-Value="Input.StateId"
+                                                Data="States"
+                                                ValueProperty="Id"
+                                                TextProperty="Text"
+                                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                                AllowFiltering />
+
+                                <RadzenCustomValidator Component="StateId" Validator="() => Input.StateId != 0" Text="Select state." />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Spouse</RadzenLabel>
+                                <RadzenDropDown Name="Spouse" @bind-Value="Input.Spouse" Data="@(new List<string> { "Yes", "No" })" />
+                                <RadzenDataAnnotationValidator Component="Spouse" />
+                            </RadzenStack>
+
+                            @if (Input.Spouse == "Yes")
+                            {
+                                <RadzenStack Gap="0">
+                                    <RadzenLabel>Spouse Name</RadzenLabel>
+                                    <RadzenTextBox Name="SpouseName" @bind-Value="Input.SpouseName" />
+                                    <RadzenRequiredValidator Component="SpouseName" Text="Spouse name is required." />
+                                    <RadzenDataAnnotationValidator Component="SpouseName" />
+                                </RadzenStack>
+
+                                <RadzenStack Gap="0">
+                                    <RadzenLabel>Spouse DOB</RadzenLabel>
+                                    <RadzenTextBox Name="SpouseDob" @bind-Value="Input.SpouseDob" />
+                                    <RadzenRequiredValidator Component="SpouseDob" Text="Spouse date of birth is required." />
+                                    <RadzenDataAnnotationValidator Component="SpouseDob" />
+                                </RadzenStack>
+                            }
+                        </RadzenStack>
+                    </RadzenFieldset>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <RadzenColumn SizeMD="6">
+                <RadzenCard>
+                    <RadzenFieldset Text="Auto & Home Info">
+                        <RadzenStack>
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Current Auto Carrier</RadzenLabel>
+                                <RadzenTextBox Name="CurrentAutoCarrier" @bind-Value="Input.CurrentAutoCarrier" />
+                                <RadzenDataAnnotationValidator Component="CurrentAutoCarrier" />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Any Lapses</RadzenLabel>
+                                <RadzenDropDown Name="AnyLapses" @bind-Value="Input.AnyLapses" Data="@(new List<string> { "Yes", "No" })" />
+                                <RadzenDataAnnotationValidator Component="AnyLapses" />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Make And Model</RadzenLabel>
+                                <RadzenTextArea Name="MakeAndModel" @bind-Value="Input.MakeAndModel" Rows="6" />
+                                <RadzenDataAnnotationValidator Component="MakeAndModel" />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Accidents</RadzenLabel>
+                                <RadzenDropDown Name="Accidents" @bind-Value="Input.Accidents" Data="@(new List<string> { "No", "1", "2" })" />
+                                <RadzenDataAnnotationValidator Component="Accidents" />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Tickets</RadzenLabel>
+                                <RadzenDropDown Name="Tickets" @bind-Value="Input.Tickets" Data="@(new List<string> { "No", "1", "2" })" />
+                                <RadzenDataAnnotationValidator Component="Tickets" />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Home Owner</RadzenLabel>
+                                <RadzenDropDown Name="HomeOwner" @bind-Value="Input.HomeOwner" Data="@(new List<string> { "Yes", "No" })" />
+                                <RadzenDataAnnotationValidator Component="HomeOwner" />
+                            </RadzenStack>
+
+                            @if (Input.HomeOwner == "Yes")
+                            {
+                                <RadzenStack Gap="0">
+                                    <RadzenLabel>Home Type</RadzenLabel>
+                                    <RadzenTextBox Name="HomeType" @bind-Value="Input.HomeType" />
+                                    <RadzenDataAnnotationValidator Component="HomeType" />
+                                </RadzenStack>
+
+                                <RadzenStack Gap="0">
+                                    <RadzenLabel>Current Home Carrier</RadzenLabel>
+                                    <RadzenTextBox Name="CurrentHomeCarrier" @bind-Value="Input.CurrentHomeCarrier" />
+                                    <RadzenRequiredValidator Component="CurrentHomeCarrier" Text="Current home carrier is required." />
+                                    <RadzenDataAnnotationValidator Component="CurrentHomeCarrier" />
+                                </RadzenStack>
+
+                                <RadzenStack Gap="0">
+                                    <RadzenLabel>Any Claim In Past 3 Years</RadzenLabel>
+                                    <RadzenDropDown Name="AnyClaimInPastThreeYears" @bind-Value="Input.AnyClaimInPastThreeYears" Data="@(new List<string> { "Yes", "No" })" class="w-100" />
+                                    <RadzenRequiredValidator Component="AnyClaimInPastThreeYears" Text="Any claim in past three years is required." />
+                                    <RadzenDataAnnotationValidator Component="AnyClaimInPastThreeYears" />
+                                </RadzenStack>
+                            }
+                        </RadzenStack>
+                    </RadzenFieldset>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <RadzenColumn SizeMD="12">
+                <RadzenCard>
+                    <RadzenFieldset Text="Custom Fields">
+                        <RadzenRow>
+                            <RadzenColumn SizeMD="6">
+
+                                @if (!string.IsNullOrWhiteSpace(Input.CustomLabel1))
+                                {
+                                    <RadzenStack Gap="0">
+                                        <RadzenLabel>@Input.CustomLabel1</RadzenLabel>
+                                        <RadzenTextBox Name="Custom1" @bind-Value="Input.Custom1" />
+                                        <RadzenRequiredValidator Component="Custom1" Text="This is required." />
+                                        <RadzenDataAnnotationValidator Component="Custom1" />
+                                    </RadzenStack>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(Input.CustomLabel2))
+                                {
+                                    <RadzenStack Gap="0">
+                                        <RadzenLabel>@Input.CustomLabel2</RadzenLabel>
+                                        <RadzenTextBox Name="Custom2" @bind-Value="Input.Custom2" />
+                                        <RadzenRequiredValidator Component="Custom2" Text="This is required." />
+                                        <RadzenDataAnnotationValidator Component="Custom2" />
+                                    </RadzenStack>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(Input.CustomLabel3))
+                                {
+                                    <RadzenStack Gap="0">
+                                        <RadzenLabel>@Input.CustomLabel3</RadzenLabel>
+                                        <RadzenTextBox Name="Custom3" @bind-Value="Input.Custom3" />
+                                        <RadzenRequiredValidator Component="Custom3" Text="This is required." />
+                                        <RadzenDataAnnotationValidator Component="Custom3" />
+                                    </RadzenStack>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(Input.CustomLabel4))
+                                {
+                                    <RadzenStack Gap="0">
+                                        <RadzenLabel>@Input.CustomLabel4</RadzenLabel>
+                                        <RadzenTextBox Name="Custom4" @bind-Value="Input.Custom4" />
+                                        <RadzenRequiredValidator Component="Custom4" Text="This is required." />
+                                        <RadzenDataAnnotationValidator Component="Custom4" />
+                                    </RadzenStack>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(Input.CustomLabel5))
+                                {
+                                    <RadzenStack Gap="0">
+                                        <RadzenLabel>@Input.CustomLabel5</RadzenLabel>
+                                        <RadzenTextBox Name="Custom5" @bind-Value="Input.Custom5" />
+                                        <RadzenRequiredValidator Component="Custom5" Text="This is required." />
+                                        <RadzenDataAnnotationValidator Component="Custom5" />
+                                    </RadzenStack>
+                                }
+
+                            </RadzenColumn>
+
+                            <RadzenColumn SizeMD="6">
+
+                                @if (!string.IsNullOrWhiteSpace(Input.CustomLabel6))
+                                {
+                                    <RadzenStack Gap="0">
+                                        <RadzenLabel>@Input.CustomLabel6</RadzenLabel>
+                                        <RadzenTextBox Name="Custom6" @bind-Value="Input.Custom6" />
+                                        <RadzenRequiredValidator Component="Custom6" Text="This is required." />
+                                        <RadzenDataAnnotationValidator Component="Custom6" />
+                                    </RadzenStack>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(Input.CustomLabel7))
+                                {
+                                    <RadzenStack Gap="0">
+                                        <RadzenLabel>@Input.CustomLabel7</RadzenLabel>
+                                        <RadzenTextBox Name="Custom7" @bind-Value="Input.Custom7" />
+                                        <RadzenRequiredValidator Component="Custom7" Text="This is required." />
+                                        <RadzenDataAnnotationValidator Component="Custom7" />
+                                    </RadzenStack>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(Input.CustomLabel8))
+                                {
+                                    <RadzenStack Gap="0">
+                                        <RadzenLabel>@Input.CustomLabel8</RadzenLabel>
+                                        <RadzenTextBox Name="Custom8" @bind-Value="Input.Custom8" />
+                                        <RadzenRequiredValidator Component="Custom8" Text="This is required." />
+                                        <RadzenDataAnnotationValidator Component="Custom8" />
+                                    </RadzenStack>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(Input.CustomLabel9))
+                                {
+                                    <RadzenStack Gap="0">
+                                        <RadzenLabel>@Input.CustomLabel9</RadzenLabel>
+                                        <RadzenTextBox Name="Custom9" @bind-Value="Input.Custom9" />
+                                        <RadzenRequiredValidator Component="Custom9" Text="This is required." />
+                                        <RadzenDataAnnotationValidator Component="Custom9" />
+                                    </RadzenStack>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(Input.CustomLabel10))
+                                {
+                                    <RadzenStack Gap="0">
+                                        <RadzenLabel>@Input.CustomLabel10</RadzenLabel>
+                                        <RadzenTextBox Name="Custom10" @bind-Value="Input.Custom10" />
+                                        <RadzenRequiredValidator Component="Custom10" Text="This is required." />
+                                        <RadzenDataAnnotationValidator Component="Custom10" />
+                                    </RadzenStack>
+                                }
+                            </RadzenColumn>
+                        </RadzenRow>
+                    </RadzenFieldset>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <RadzenColumn SizeMD="6">
+                <RadzenCard>
+                    <RadzenFieldset Text="Agent Disposition Info">
+                        <RadzenStack>
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Disposition Type (optional)</RadzenLabel>
+                                <RadzenDropDown Name="DispositionTypeId" @bind-Value="Input.DispositionTypeId" Data="DispositionTypes" ValueProperty="Id" TextProperty="Name" AllowClear />
+                                <RadzenDataAnnotationValidator Component="DispositionTypeId" />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Disposition Comment (optional)</RadzenLabel>
+                                <RadzenTextArea Name="DispositionComment" @bind-Value="Input.DispositionComment" Rows="5" />
+                                <RadzenDataAnnotationValidator Component="DispositionComment" />
+                            </RadzenStack>
+                        </RadzenStack>
+                    </RadzenFieldset>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <RadzenColumn SizeMD="6">
+                <RadzenCard>
+                    <RadzenFieldset Text="Verifier Disposition Info">
+                        <RadzenStack>
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Disposition Status (optional)</RadzenLabel>
+                                <RadzenDropDown Name="DispositionStatusId" @bind-Value="Input.DispositionStatusId" Data="DispositionStatuses" ValueProperty="Id" TextProperty="Name" AllowClear />
+                                <RadzenDataAnnotationValidator Component="DispositionStatusId" />
+                            </RadzenStack>
+
+                            <RadzenStack Gap="0">
+                                <RadzenLabel>Verifier Comment (optional)</RadzenLabel>
+                                <RadzenTextArea Name="VerifierComment" @bind-Value="Input.VerifierComment" Rows="5" />
+                                <RadzenDataAnnotationValidator Component="VerifierComment" />
+                            </RadzenStack>
+                        </RadzenStack>
+                    </RadzenFieldset>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <RadzenColumn SizeMD="12">
+                <RadzenButton ButtonType="ButtonType.Submit" Disabled="isUpdating">Update</RadzenButton>
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenTemplateForm>
+}
+
+
+

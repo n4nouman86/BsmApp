@@ -1,0 +1,39 @@
+﻿@page "/InvoiceFromIndex"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Invoice From</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager navManager
+
+<PageHeading HeadingText="Invoice From" />
+
+
+
+
+<RadzenCard>
+    @if (InvoiceFroms is null)
+    {
+        <em>Loading...</em>
+    }
+    else
+    {
+        <RadzenDataGrid Data="@InvoiceFroms" AllowPaging PageSize="10">
+
+            <Columns>
+                <RadzenDataGridColumn Property="InvoiceBy" Title="Invoice By" />
+                <RadzenDataGridColumn Property="MobileNumber" Title="Mobile Number" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn Property="LandLineNumber" Title="Land Line Number" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn Property="EmailAddress" Title="Email Address" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn Property="Address" Title="Address" TextAlign="TextAlign.Center" />
+
+                <RadzenDataGridColumn Title="Action" TextAlign="TextAlign.Center">
+                    <Template Context="model">
+                        <RadzenLink Path="@String.Concat("InvoiceFromEdit/", model.Id)">
+                            <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="@ButtonStyle.Secondary" />
+                        </RadzenLink>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenCard>

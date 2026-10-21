@@ -1,0 +1,191 @@
+﻿@page "/DashboardSuperAdmin"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Dashboard</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageHeading HeadingText="Dashboard" />
+
+<RadzenCard>
+    @if (ChartData is null)
+    {
+        <em>Loading...</em>
+    }
+    else
+    {
+        <RadzenChart Animate AllowSeriesHover>
+            <RadzenColumnSeries FillMode="FillMode.Gradient"
+                                Data="ChartData"
+                                CategoryProperty="ChartLabel"
+                                ValueProperty="ChartTotalVal"
+                                Title="Transfers">            
+                <RadzenSeriesDataLabels Visible="true" />
+            </RadzenColumnSeries>
+
+            <RadzenColumnSeries FillMode="FillMode.Gradient"
+                                Data="ChartData"
+                                CategoryProperty="ChartLabel"
+                                ValueProperty="ChartBillableVal"
+                                Title="Billable">
+                <RadzenSeriesDataLabels Visible="true" />
+            </RadzenColumnSeries>
+
+            <RadzenColumnSeries FillMode="FillMode.Gradient"
+                                Data="ChartData"
+                                CategoryProperty="ChartLabel"
+                                ValueProperty="ChartNonBillableVal"
+                                Title="Non Billable">
+                <RadzenSeriesDataLabels Visible="true" />
+            </RadzenColumnSeries>
+
+            <RadzenColumnOptions Radius="3" />
+            <RadzenValueAxis>
+                <RadzenGridLines Visible="true" />
+                <RadzenAxisTitle Text="Transfers (Day)" />
+            </RadzenValueAxis>
+        </RadzenChart>
+    }
+</RadzenCard>
+
+<br />
+
+<RadzenCard>
+    <RadzenText Text="Day Report" TextStyle="TextStyle.H6" />
+
+    @if (DailyReports is null)
+    {
+        <em>Loading...</em>
+    }
+    else
+    {
+        <RadzenDataGrid Data="@DailyReports" >
+            <HeaderTemplate>
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                    <RadzenLabel>Select Date</RadzenLabel>
+                    <RadzenDatePicker @bind-Value="DailyReportDate" DateFormat="dd MMM yyyy" Change="ChangeDailyReportDate" />
+                    <RadzenButton Text="Previous" Click="() => AddDailyReportDate(-1)" class="" />
+                    <RadzenButton Text="Next" Click="() => AddDailyReportDate(1)" class="" />
+                </RadzenStack>
+            </HeaderTemplate>
+
+            <Columns>
+                
+                <RadzenDataGridColumn Title="Transfer Date" Width="180px">
+                    <Template Context="rep">
+                        @rep.TransferDate.ToString("dd MMM yyyy")
+                    </Template>
+                    <FooterTemplate><b>Total</b></FooterTemplate>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Property="FullName" Title="Full Name" />
+                <RadzenDataGridColumn Property="States" Title="States" />
+
+                <RadzenDataGridColumn Title="Time Zones" TextAlign="TextAlign.Center" Width="200px">
+                    <Template Context="rep">
+                        @rep.ScheduleFrom?.ToServerDateTimeOffset().ToString("hh':'mm tt") -
+                        @rep.ScheduleTo?.ToServerDateTimeOffset().ToString("hh':'mm tt")
+                    </Template>
+                </RadzenDataGridColumn>
+                                
+                <RadzenDataGridColumn Title="Target" TextAlign="TextAlign.Center">
+                    <Template Context="item"> @item.Target </Template>
+                    <FooterTemplate><b>@DailyReports.Sum(x => x.Target)</b> </FooterTemplate>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Achieved" TextAlign="TextAlign.Center">
+                    <Template Context="item"> @item.Achieved </Template>
+                    <FooterTemplate><b>@DailyReports.Sum(x => x.Achieved)</b> </FooterTemplate>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Billable" TextAlign="TextAlign.Center">
+                    <Template Context="item"> @item.Billable </Template>
+                    <FooterTemplate><b>@DailyReports.Sum(x => x.Billable)</b> </FooterTemplate>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Non Billable" TextAlign="TextAlign.Center">
+                    <Template Context="item"> @item.NonBillable </Template>
+                    <FooterTemplate><b>@DailyReports.Sum(x => x.NonBillable)</b> </FooterTemplate>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Property="CostPerLead" Title="Cost Per Lead" FormatString="{0:C2}" TextAlign="TextAlign.Center">
+                    <FooterTemplate><b>@DailyReports.Average(x => x.CostPerLead)?.ToString("C2")</b> </FooterTemplate>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Total Amount" TextAlign="TextAlign.Center">
+                    <Template Context="item"> @item.TotalAmount.ToString("C2") </Template>
+                    <FooterTemplate><b>@DailyReports.Sum(x => x.TotalAmount).ToString("C2")</b> </FooterTemplate>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenCard>
+
+<br />
+
+<RadzenCard>
+
+    <RadzenText Text="Weekly Report" TextStyle="TextStyle.H6" />
+
+    @if (WeeklyReports is null)
+    {
+        <em>Loading...</em>
+    }
+    else
+    {
+        <RadzenDataGrid Data="@WeeklyReports">
+
+            <HeaderTemplate>
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                    <RadzenLabel>From</RadzenLabel>
+                    <RadzenDatePicker @bind-Value="dfrom" DateFormat="dd MMM yyyy" />
+
+                    <RadzenLabel>To</RadzenLabel>
+                    <RadzenDatePicker @bind-Value="dto" DateFormat="dd MMM yyyy" />
+
+                    <RadzenButton Text="Load" Click="GetWeeklyTransfer" />
+
+                    <RadzenButton Text="Previous" Click="() => AddWeeklyReportDates(-7)" ButtonStyle="ButtonStyle.Secondary" />
+                    <RadzenButton Text="Next" Click="() => AddWeeklyReportDates(7)" ButtonStyle="ButtonStyle.Secondary" />
+                </RadzenStack>
+            </HeaderTemplate>
+
+            <Columns>
+                <RadzenDataGridColumn Title="Full Name">
+                    <Template Context="item"> @item.FullName </Template>
+                    <FooterTemplate><b>Total</b></FooterTemplate>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="States" Property="States" />
+
+                <RadzenDataGridColumn Title="Target" TextAlign="TextAlign.Center">
+                    <Template Context="item"> @item.Target </Template>
+                    <FooterTemplate><b>@WeeklyReports.Sum(x => x.Target)</b></FooterTemplate>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Achieved" TextAlign="TextAlign.Center">
+                    <Template Context="item"> @item.Achieved </Template>
+                    <FooterTemplate><b>@WeeklyReports.Sum(x => x.Achieved)</b></FooterTemplate>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Billable" TextAlign="TextAlign.Center">
+                    <Template Context="item"> @item.Billable </Template>
+                    <FooterTemplate><b>@WeeklyReports.Sum(x => x.Billable)</b></FooterTemplate>
+                </RadzenDataGridColumn>
+                
+                <RadzenDataGridColumn Title="Non Billable" TextAlign="TextAlign.Center">
+                    <Template Context="item"> @item.NonBillable </Template>
+                    <FooterTemplate><b>@WeeklyReports.Sum(x => x.NonBillable)</b></FooterTemplate>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Property="CostPerLead" Title="Cost Per Lead" FormatString="{0:C2}" TextAlign="TextAlign.Center">
+                    <FooterTemplate><b>@WeeklyReports.Average(x => x.CostPerLead)?.ToString("C2")</b> </FooterTemplate>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Total Amount" TextAlign="TextAlign.Center">
+                    <Template Context="item"> @item.TotalAmount.ToString("C2") </Template>
+                    <FooterTemplate><b>@WeeklyReports.Sum(x => x.TotalAmount).ToString("C2")</b> </FooterTemplate>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenCard>

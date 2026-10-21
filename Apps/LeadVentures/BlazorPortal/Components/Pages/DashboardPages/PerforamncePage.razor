@@ -1,0 +1,234 @@
+@page "/DashboardPerformance"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Performance Dashboard</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> contextFactory
+
+<PageHeading HeadingText="Performance Dashboard" />
+
+<RadzenCard class="mb-3">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+        <RadzenLabel Text="Select Date" />
+        <RadzenDatePicker @bind-Value="SelectedDate" DateFormat="dd MMM yyyy" ShowTime="false" Change="LoadPerformance" />
+    </RadzenStack>
+</RadzenCard>
+
+@if (CurrentPerformance is null)
+{
+    <div class="alert alert-warning">No performance record found for @SelectedDate.ToString("dd MMM yyyy").</div>
+}
+else
+{
+    <RadzenCard>
+        <table class="cus-table">
+            <tbody>
+                <tr class="rz-background-color-black">
+                    <td colspan="9">
+                        <RadzenText TextStyle="TextStyle.DisplayH5" TextAlign="TextAlign.Center" class="rz-m-0 rz-p-5">
+                            بِسْمِ ٱللّٰهِ ٱلرَّحْمٰنِ ٱلرَّحِيمِ
+                        </RadzenText>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="rz-background-color-base-50" rowspan="2">
+                        <RadzenText TextStyle="TextStyle.H2" TextAlign="TextAlign.Center" class="rz-m-0 rz-color-black">
+                            @OverallTarget
+                        </RadzenText>
+                    </td>
+                    <td class="rz-background-color-black"><strong>KG</strong></td>
+                    <td class="rz-background-color-black">@KgAchieved</td>
+                    <td class="rz-background-color-black"><strong>BSM</strong></td>
+                    <td class="rz-background-color-black">@BsmAchieved</td>
+                    <td class="rz-background-color-danger-darker"><strong>KG Rem</strong></td>
+                    <td class="rz-background-color-danger-darker">@KgRem</td>
+                    <td class="rz-background-color-series-4"><strong>Achieved</strong></td>
+                    <td class="rz-background-color-series-4">@TotalAchieved</td>
+                </tr>
+
+                <tr>
+                    <td class="rz-background-color-base-600"><strong>Target</strong></td>
+                    <td class="rz-background-color-base-600">@CurrentPerformance.KGTarget</td>
+                    <td class="rz-background-color-base-600"><strong>Target</strong></td>
+                    <td class="rz-background-color-base-600">@CurrentPerformance.BSMTarget</td>
+                    <td class="rz-background-color-danger-darker"><strong>BSM Rem</strong></td>
+                    <td class="rz-background-color-danger-darker">@BsmRem</td>
+                    <td class="rz-background-color-series-4"><strong>Remaining</strong></td>
+                    <td class="rz-background-color-series-4">@TotalRemaining</td>
+                </tr>
+            </tbody>
+        </table>
+    </RadzenCard>
+
+    <br />
+
+    @if (Rows is null || Rows.Count == 0)
+    {
+        <div class="alert alert-info">No performance lines recorded for this date.</div>
+    }
+    else
+    {
+        <RadzenCard>
+            <table class="cus-table">
+                <tbody>
+                    <tr>
+                        <th class="rz-background-color-info-darker" rowspan="2">
+                            Time
+                        </th>
+                        <th class="rz-background-color-warning-darker" colspan="5">
+                            <h3>KG</h3>
+                        </th>
+                        <th class="rz-background-color-info-darker" rowspan="2">
+                            Time
+                        </th>
+                        <th class="rz-background-color-secondary-darker" colspan="5">
+                            <h3>BSM</h3>
+                        </th>
+                    </tr>
+
+                    <tr>
+                        <th class="rz-background-color-warning-darker">Best Day</th>
+                        <th class="rz-background-color-warning-darker">Total Transfers till Time</th>
+                        <th class="rz-background-color-warning-darker">Last 30 Min Report</th>
+                        <th class="rz-background-color-warning-darker">Hourly Today</th>
+                        <th class="rz-background-color-warning-darker">Hourly Best</th>
+
+                        <th class="rz-background-color-secondary-darker">Best Day</th>
+                        <th class="rz-background-color-secondary-darker">Total Transfers till Time</th>
+                        <th class="rz-background-color-secondary-darker">Last 30 Min Report</th>
+                        <th class="rz-background-color-secondary-darker">Hourly Today</th>
+                        <th class="rz-background-color-secondary-darker">Hourly Best</th>
+                    </tr>
+
+                    @for (int i = 0; i < Rows.Count; i++)
+                    {
+                        var row = Rows[i];
+
+                        bool isEvenRow = i % 2 == 0;
+
+                        <tr class="@(isEvenRow ? "" : "cus-border-bottom")">
+                            <th class="rz-background-color-info-light">
+                                @row.TransferTime.ToString("hh:mm tt")
+                            </th>
+
+                            <td class="rz-background-color-warning-darker">@row.KgBestDay</td>
+                            <td>@row.KgTransfersTillTime</td>
+                            <td>@row.KgLast30MinReport</td>
+
+                            @if (isEvenRow)
+                            {
+                                <td class="rz-background-color-warning-darker" rowspan="2">@row.KgHourlyToday</td>
+                                <td class="rz-background-color-warning-darker" rowspan="2">@row.KgHourlyBestDay</td>
+                            }
+
+                            <th class="rz-background-color-info-light">
+                                @row.TransferTime.ToString("hh:mm tt")
+                            </th>
+
+                            <td class="rz-background-color-secondary-darker">@row.BsmBestDay</td>
+                            <td>@row.BsmTransfersTillTime</td>
+                            <td>@row.BsmLast30MinReport</td>
+
+                            @if (isEvenRow)
+                            {
+                                <td class="rz-background-color-secondary-darker" rowspan="2">@row.BsmHourlyToday</td>
+                                <td class="rz-background-color-secondary-darker" rowspan="2">@row.BsmHourlyBestDay</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </RadzenCard>
+    }
+
+    <br />
+
+    <RadzenRow>
+        <RadzenColumn SizeMD="6">
+            <RadzenCard>
+                <table class="cus-table">
+                    <tbody>
+                        <tr class="rz-background-color-secondary-light">
+                            <th>Campaigns</th>
+                            <th>Reps</th>
+                            <th>Verifiers</th>
+                            <th>Grand Total</th>
+                        </tr>
+                        <tr>
+                            <td>KG</td>
+                            <td>@CurrentPerformance.KGReps</td>
+                            <td>@CurrentPerformance.KGVerifiers</td>
+                            <td>@(CurrentPerformance.KGReps + CurrentPerformance.KGVerifiers)</td>
+                        </tr>
+                        <tr>
+                            <td>BSM</td>
+                            <td>@CurrentPerformance.BSMReps</td>
+                            <td>@CurrentPerformance.BSMVerifiers</td>
+                            <td>@(CurrentPerformance.BSMReps + CurrentPerformance.BSMVerifiers)</td>
+                        </tr>
+                        <tr class="rz-background-color-secondary-light">
+                            <th>Total</th>
+                            <th>@TotalReps</th>
+                            <th>@TotalVerifiers</th>
+                            <th>@(TotalReps + TotalVerifiers)</th>
+                        </tr>
+                    </tbody>
+                </table>
+            </RadzenCard>
+        </RadzenColumn>
+        <RadzenColumn SizeMD="6">
+            <RadzenCard>
+                <table class="cus-table">
+                    <tbody>
+                        <tr class="rz-background-color-secondary-light">
+                            <th>Campaigns</th>
+                            <th>Cost</th>
+                        </tr>
+                        <tr>
+                            <td>KG</td>
+                            <td>@CurrentPerformance.KGDialerCost.ToString("C0")</td>
+                        </tr>
+                        <tr>
+                            <td>BSM</td>
+                            <td>@CurrentPerformance.BSMDialerCost.ToString("C0")</td>
+                        </tr>
+                        <tr>
+                            <td>Durketa</td>
+                            <td>@CurrentPerformance.DurketaDialerCost.ToString("C0")</td>
+                        </tr>
+                        <tr class="rz-background-color-secondary-light">
+                            <th>Total</th>
+                            <th>
+                                    @(
+                                        (CurrentPerformance.KGDialerCost + 
+                                        CurrentPerformance.BSMDialerCost + 
+                                        CurrentPerformance.DurketaDialerCost)
+                                        .ToString("C0")
+                                    )
+                            </th>
+                        </tr>
+                    </tbody>
+                </table>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+}
+
+
+<style>
+    .cus-table{
+        width: 100%;
+        text-align: center !important;
+    }
+
+    .cus-table td, th {
+        border-collapse: collapse;
+        border: 0px solid;
+        padding: 0.5rem;
+    }
+
+    .cus-border-bottom {
+        border-bottom: 1px solid #0e1724;
+    }
+</style>
+

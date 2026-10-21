@@ -1,0 +1,61 @@
+@page "/DncLeadIndex"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>DNC Leads</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> contextFactory
+@inject DialogService dialogService
+
+<PageHeading HeadingText="DNC Leads" />
+
+<RadzenStack AlignItems="AlignItems.Start">
+    <RadzenButton Icon="add" Text="Add New DNC Lead" ButtonStyle="ButtonStyle.Primary" Click="OpenCreate" />
+</RadzenStack>
+
+<br />
+
+<RadzenCard>
+    <RadzenFieldset Text="Search">
+        <EditForm Model="Input" OnValidSubmit="Search">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.End">
+                <RadzenStack Gap="0">
+                    <RadzenLabel>Phone</RadzenLabel>
+                    <RadzenTextBox @bind-Value="Input.Phone" class="w-100" />
+                </RadzenStack>
+                <RadzenStack>
+                    <RadzenButton ButtonType="ButtonType.Submit" Text="Search" />
+                </RadzenStack>
+            </RadzenStack>
+        </EditForm>
+    </RadzenFieldset>
+</RadzenCard>
+
+<br />
+
+<RadzenCard>
+    @if (DncLeads is null)
+    {
+        <em>Loading...</em>
+    }
+    else
+    {
+        <RadzenDataGrid Data="DncLeads" Responsive AllowColumnReorder AllowColumnResize EmptyText="No DNC leads found">
+            <Columns>
+                <RadzenDataGridColumn Property="Phone" Title="Phone" Width="140px" />
+                <RadzenDataGridColumn Property="FirstName" Title="First Name" />
+                <RadzenDataGridColumn Property="LastName" Title="Last Name" />
+                <RadzenDataGridColumn Property="Email" Title="Email" />
+                <RadzenDataGridColumn Property="City" Title="City" />
+                <RadzenDataGridColumn Property="State" Title="State" Width="80px" />
+                <RadzenDataGridColumn Property="PostalCode" Title="Postal Code" Width="110px" />
+                <RadzenDataGridColumn Title="Action" TextAlign="TextAlign.Center" Width="120px">
+                    <Template Context="lead">
+                        <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Primary"
+                            Click="@(() => OpenEdit(lead.Id))" title="Edit" />
+                        <RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger"
+                            Click="@(() => Delete(lead.Id))" title="Delete" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenCard>

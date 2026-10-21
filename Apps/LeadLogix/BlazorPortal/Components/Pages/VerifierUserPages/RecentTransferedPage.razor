@@ -1,0 +1,39 @@
+﻿@page "/RecentTransfered"
+@attribute [Authorize(Roles = "Verifier")]
+<PageTitle>Transfer Agent</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject AuthenticationStateProvider authProvider
+@inject UserManager<ApplicationUser> userManager
+
+<PageHeading HeadingText="Recent Transfered" />
+
+
+
+<RadzenCard>
+    @if (Leads is null)
+    {
+        <em>Loading...</em>
+    }
+    else
+    {
+        <RadzenDataGrid Data="Leads">
+
+            <Columns>
+                <RadzenDataGridColumn Title="Transfer On">
+                    <Template Context="lead">
+                        @lead.TransferOn.LocalDateTime.ToDateTimeString()
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Property="AgentFullName" Title="Agent Name" />
+                <RadzenDataGridColumn Property="FullName" Title="Full Name" />
+                <RadzenDataGridColumn Property="PhoneNumber" Title="Phone Number" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn Property="State" Title="State" />
+                <RadzenDataGridColumn Property="Spouse" Title="Spouse" />
+                <RadzenDataGridColumn Property="SpouseName" Title="Spouse Name" />
+            </Columns>
+
+        </RadzenDataGrid>
+    }
+</RadzenCard>

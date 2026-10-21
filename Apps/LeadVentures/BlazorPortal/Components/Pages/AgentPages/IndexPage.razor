@@ -1,0 +1,90 @@
+﻿@page "/AgentIndex"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Agents</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageHeading HeadingText="Agents" />
+
+<RadzenCard>
+    <RadzenFieldset Text="Search Info">
+        <EditForm Model="Input" OnValidSubmit="SearchAgent">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                <RadzenLabel>Full Name</RadzenLabel>
+                <RadzenTextBox @bind-Value="Input.SearchTerm" />
+                <RadzenButton ButtonType="ButtonType.Submit">Search</RadzenButton>
+            </RadzenStack>
+        </EditForm>
+    </RadzenFieldset>
+</RadzenCard>
+
+<br />
+
+<RadzenCard>
+    @if (Agents is null)
+    {
+        <em>Loading...</em>
+    }
+    else
+    {
+        <RadzenDataGrid Data="@Agents" AllowPaging Count="count" ShowPagingSummary LoadData="LoadData" IsLoading="isLoading">
+            <Columns>
+                <RadzenDataGridColumn Property="FullName" Title="Agent Name" />
+                <RadzenDataGridColumn Property="AgentEmail" Title="Agent Email" />
+                <RadzenDataGridColumn Property="PhoneNumber" Title="Agent Phone" Width="150px" />
+                <RadzenDataGridColumn Property="DailyCap" Title="Daily Cap" TextAlign="TextAlign.Center" Width="120px" />
+                <RadzenDataGridColumn Property="CoolOffTime" Title="Cool Off Time" TextAlign="TextAlign.Center" Width="120px" />
+                
+                <RadzenDataGridColumn Title="States" TextAlign="TextAlign.Center" Width="120px">
+                    <Template Context="agent">
+                        <RadzenBadge BadgeStyle="BadgeStyle.Light">
+                            @agent.States
+                        </RadzenBadge>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Status" TextAlign="TextAlign.Center" Width="120px">
+                    <Template Context="agent">
+                        @if (agent.IsOnline)
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Success">online</RadzenBadge>
+                        }
+                        else
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Light">offline</RadzenBadge>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Campaign" TextAlign="TextAlign.Center" Width="120px">
+                    <Template Context="agent">
+                        @if (agent.CampaignStatus == "Active")
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Success">@agent.CampaignStatus</RadzenBadge>
+                        }
+                        else
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Warning">@agent.CampaignStatus</RadzenBadge>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn Title="Created On" Width="120px">
+                    <Template Context="agent">
+                        @agent.CreateOn.ToString("MMM dd, yyyy")
+                    </Template>
+                </RadzenDataGridColumn>
+                
+                <RadzenDataGridColumn Title="Action" TextAlign="TextAlign.Center" Width="80px">
+                    <Template Context="agent">
+                        <RadzenLink Path="@String.Concat("AgentEdit/", agent.Id)">
+                            <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="@ButtonStyle.Secondary" />
+                        </RadzenLink>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenCard>
+
+

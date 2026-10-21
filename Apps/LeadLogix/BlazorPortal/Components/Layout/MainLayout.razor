@@ -1,0 +1,47 @@
+﻿@inherits LayoutComponentBase
+
+@inject NavigationManager navManager
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject AuthenticationStateProvider authProvider
+@inject NotificationService notify
+@inject IJSRuntime js
+@inject IConfiguration config
+
+<RadzenComponents @rendermode="new InteractiveServerRenderMode(false)" />
+
+<RadzenLayout>
+    <RadzenHeader>
+        <RadzenStack>
+            <NavMenu />
+        </RadzenStack>
+    </RadzenHeader>
+
+    <RadzenBody>
+        <div class="container-fluid">
+            @Body
+        </div>
+    </RadzenBody>
+
+    <RadzenFooter>
+        <RadzenStack AlignItems="AlignItems.Center">
+            <RadzenText TextStyle="TextStyle.Caption">
+                © copyright @DateTime.Now.Year <RadzenLink Path="@AppInfo.Website" Target="_blank">@AppInfo.AppName</RadzenLink>  - All rights reserved.
+            </RadzenText>
+        </RadzenStack>
+    </RadzenFooter>
+
+    <audio id="lead-sound-file">
+        <source src="alarm/bell0.mp3" />
+    </audio>
+</RadzenLayout>
+
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+
+
+

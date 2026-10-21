@@ -1,0 +1,69 @@
+@inject IDbContextFactory<ApplicationDbContext> contextFactory
+@inject DialogService DialogService
+
+<EditForm Model="Input" OnValidSubmit="Update">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger" />
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-danger mb-3">@ErrorMessage</div>
+    }
+
+    <div class="mb-3">
+        <RadzenLabel>Performance Date</RadzenLabel>
+        <RadzenDatePicker @bind-Value="Input.PerformancDate" DateFormat="yyyy-MM-dd" ShowTime="false" class="w-100" />
+        <ValidationMessage For="() => Input.PerformancDate" class="text-danger" />
+    </div>
+
+    <RadzenFieldset Text="KG" class="mb-3">
+        <div class="mb-3">
+            <RadzenLabel>KG Target</RadzenLabel>
+            <RadzenNumeric @bind-Value="Input.KGTarget" class="w-100" />
+        </div>
+        <div class="mb-3">
+            <RadzenLabel>KG Reps</RadzenLabel>
+            <RadzenNumeric @bind-Value="Input.KGReps" class="w-100" />
+        </div>
+        <div class="mb-0">
+            <RadzenLabel>KG Verifiers</RadzenLabel>
+            <RadzenNumeric @bind-Value="Input.KGVerifiers" class="w-100" />
+        </div>
+    </RadzenFieldset>
+
+    <RadzenFieldset Text="BSM" class="mb-3">
+        <div class="mb-3">
+            <RadzenLabel>BSM Target</RadzenLabel>
+            <RadzenNumeric @bind-Value="Input.BSMTarget" class="w-100" />
+        </div>
+        <div class="mb-3">
+            <RadzenLabel>BSM Reps</RadzenLabel>
+            <RadzenNumeric @bind-Value="Input.BSMReps" class="w-100" />
+        </div>
+        <div class="mb-0">
+            <RadzenLabel>BSM Verifiers</RadzenLabel>
+            <RadzenNumeric @bind-Value="Input.BSMVerifiers" class="w-100" />
+        </div>
+    </RadzenFieldset>
+
+    <RadzenFieldset Text="Dialer Costs" class="mb-3">
+        <div class="mb-3">
+            <RadzenLabel>KG Dialer Cost</RadzenLabel>
+            <RadzenNumeric @bind-Value="Input.KGDialerCost" class="w-100" />
+        </div>
+        <div class="mb-3">
+            <RadzenLabel>BSM Dialer Cost</RadzenLabel>
+            <RadzenNumeric @bind-Value="Input.BSMDialerCost" class="w-100" />
+        </div>
+        <div class="mb-0">
+            <RadzenLabel>Durketa Dialer Cost</RadzenLabel>
+            <RadzenNumeric @bind-Value="Input.DurketaDialerCost" class="w-100" />
+        </div>
+    </RadzenFieldset>
+
+    <div class="d-flex gap-2 mt-3">
+        <RadzenButton ButtonType="ButtonType.Submit" Text="Update" ButtonStyle="ButtonStyle.Primary" />
+        <RadzenButton ButtonType="ButtonType.Button" Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
+    </div>
+
+</EditForm>

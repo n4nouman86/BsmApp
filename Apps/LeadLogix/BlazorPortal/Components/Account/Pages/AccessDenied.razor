@@ -1,0 +1,12 @@
+﻿@page "/Account/AccessDenied"
+@layout AccountLayout
+
+<PageTitle>Access denied</PageTitle>
+
+<RadzenStack Gap="0">
+    <RadzenAlert Title="Access denied" AlertStyle="AlertStyle.Danger" AllowClose="false">
+        You do not have access to this resource
+    </RadzenAlert>
+    
+    <RadzenLink Text="Return to home page" Path="/" />
+</RadzenStack>

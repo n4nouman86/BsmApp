@@ -1,0 +1,30 @@
+﻿@inherits LayoutComponentBase
+
+<RadzenLayout>
+    <RadzenHeader>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="15" class="rz-h-100">
+            <a href="/" style="text-decoration:none;" class="rz-ms-5">
+                <RadzenImage Path="/logo/logo.png" Style="width:50px;" />
+            </a>
+
+            <a href="/" style="text-decoration:none;">
+                <RadzenText TextStyle="TextStyle.H6" Text="@AppInfo.AppName" class="rz-color-white rz-m-0" />
+            </a>
+        </RadzenStack>
+    </RadzenHeader>
+    <RadzenBody>
+        <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Style="height:-webkit-fill-available">
+            <RadzenColumn SizeMD="3">
+                @Body
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenBody>
+    <RadzenFooter>
+        <RadzenStack AlignItems="AlignItems.Center">
+            <RadzenText TextStyle="TextStyle.Caption">
+                © Copyright @DateTime.Now.Year <RadzenLink Path="@AppInfo.Website" Target="_blank">@AppInfo.AppName</RadzenLink> - All rights reserved.
+            </RadzenText>
+        </RadzenStack>
+    </RadzenFooter>
+</RadzenLayout>
+

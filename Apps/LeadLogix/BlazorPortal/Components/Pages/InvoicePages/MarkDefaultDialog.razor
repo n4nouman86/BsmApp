@@ -1,0 +1,35 @@
+@inject DialogService DialogService
+
+<div class="mb-3">
+    <RadzenRow class="mb-2">
+        <RadzenColumn Size="5"><strong>Invoice No</strong></RadzenColumn>
+        <RadzenColumn>AC@(Invoice.InvoiceNo)</RadzenColumn>
+    </RadzenRow>
+    <RadzenRow class="mb-2">
+        <RadzenColumn Size="5"><strong>Agent</strong></RadzenColumn>
+        <RadzenColumn>@Invoice.FullName</RadzenColumn>
+    </RadzenRow>
+    <RadzenRow class="mb-2">
+        <RadzenColumn Size="5"><strong>Date</strong></RadzenColumn>
+        <RadzenColumn>@Invoice.CreateOn.ToString("dd MMM yyyy")</RadzenColumn>
+    </RadzenRow>
+    <RadzenRow class="mb-2">
+        <RadzenColumn Size="5"><strong>Due Date</strong></RadzenColumn>
+        <RadzenColumn>@Invoice.DueDate.ToString("dd MMM yyyy")</RadzenColumn>
+    </RadzenRow>
+    <RadzenRow class="mb-2">
+        <RadzenColumn Size="5"><strong>Billable</strong></RadzenColumn>
+        <RadzenColumn>@Invoice.BillableLeads.ToString("N0")</RadzenColumn>
+    </RadzenRow>
+    <RadzenRow class="mb-2">
+        <RadzenColumn Size="5"><strong>Total Cost</strong></RadzenColumn>
+        <RadzenColumn>@Invoice.TotalCost.ToString("C0")</RadzenColumn>
+    </RadzenRow>
+</div>
+
+<p>@ConfirmText</p>
+
+<div class="d-flex gap-2 mt-3">
+    <RadzenButton Text="@ActionLabel" ButtonStyle="@ActionStyle" Click="@(() => DialogService.Close(true))" />
+    <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => DialogService.Close(false))" />
+</div>

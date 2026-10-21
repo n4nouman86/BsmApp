@@ -1,0 +1,55 @@
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject DialogService DialogService
+
+@if (Input is null)
+{
+    <em>Loading...</em>
+}
+else
+{
+    <EditForm Model="Input" OnValidSubmit="Save">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger" />
+
+        <RadzenStack Gap="1rem">
+
+            <RadzenFieldset Text="Employee Info">
+                <RadzenStack Gap="0.5rem">
+                    <RadzenRow AlignItems="AlignItems.Center">
+                        <RadzenColumn Size="4"><RadzenLabel Text="Name" /></RadzenColumn>
+                        <RadzenColumn Size="8">
+                            <RadzenTextBox @bind-Value="Input.Name" class="w-100" />
+                            <ValidationMessage For="() => Input.Name" class="text-danger" />
+                        </RadzenColumn>
+                    </RadzenRow>
+                    <RadzenRow AlignItems="AlignItems.Center">
+                        <RadzenColumn Size="4"><RadzenLabel Text="Start Date" /></RadzenColumn>
+                        <RadzenColumn Size="8">
+                            <RadzenDatePicker @bind-Value="Input.StartDate" DateFormat="MMM dd, yyyy" class="w-100" />
+                            <ValidationMessage For="() => Input.StartDate" class="text-danger" />
+                        </RadzenColumn>
+                    </RadzenRow>
+                    <RadzenRow AlignItems="AlignItems.Center">
+                        <RadzenColumn Size="4"><RadzenLabel Text="End Date" /></RadzenColumn>
+                        <RadzenColumn Size="8">
+                            <RadzenDatePicker @bind-Value="Input.EndDate" DateFormat="MMM dd, yyyy" class="w-100" AllowClear />
+                            <ValidationMessage For="() => Input.EndDate" class="text-danger" />
+                        </RadzenColumn>
+                    </RadzenRow>
+                    <RadzenRow AlignItems="AlignItems.Center">
+                        <RadzenColumn Size="4"><RadzenLabel Text="Active" /></RadzenColumn>
+                        <RadzenColumn Size="8">
+                            <RadzenCheckBox @bind-Value="Input.IsActive" />
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenStack>
+            </RadzenFieldset>
+
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                <RadzenButton ButtonType="ButtonType.Submit" Text="Save" ButtonStyle="ButtonStyle.Primary" />
+                <RadzenButton ButtonType="ButtonType.Button" Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
+            </RadzenStack>
+
+        </RadzenStack>
+    </EditForm>
+}

@@ -1,0 +1,263 @@
+﻿@page "/AgentLeadOpen/{Id:guid}"
+@attribute [Authorize(Roles = "Agent")]
+<PageTitle>Open Lead</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NotificationService notify
+@inject AuthenticationStateProvider authProvider
+@inject NavigationManager navManager
+
+
+<PageHeading HeadingText="Open Lead" />
+
+<RadzenCard>
+
+    @if (Input is null)
+    {
+        <em>Loading...</em>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-3">
+                <RadzenFieldset Text="Lead Info">
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Phone Number</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.PhoneNumber</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Full Name</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.FullName</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Date Of Birth</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.DateOfBirth</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Address</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Address</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">State</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.State</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Spouse</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Spouse</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Spouse Name</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.SpouseName</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Spouse DOB</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.SpouseDob</b></RadzenText>
+                    </div>
+
+                </RadzenFieldset>
+            </div>
+
+            <div class="col-md-3">
+                <RadzenFieldset Text="Auto & Home Info">
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Current Auto Carrier</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.CurrentAutoCarrier</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Any Lapses</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.AnyLapses</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Make And Model</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.MakeAndModel</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Accidents</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Accidents</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Tickets</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Tickets</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Home Owner</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.HomeOwner</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Home Type</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.HomeType</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Current Home Carrier</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.CurrentHomeCarrier</b></RadzenText>
+                    </div>
+
+                    <div class="mb-3">
+                        <RadzenText TextStyle="TextStyle.Overline">Any Claim In Past 3 Years</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.AnyClaimInPastThreeYears</b></RadzenText>
+                    </div>
+                </RadzenFieldset>
+            </div>
+
+            <div class="col-md-6">
+                <RadzenFieldset Text="Custom Fields">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (!string.IsNullOrWhiteSpace(Input.CustomLabel1))
+                            {
+                                <div class="mb-3">
+                                    <RadzenText TextStyle="TextStyle.Overline">@Input.CustomLabel1</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Custom1</b></RadzenText>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(Input.CustomLabel2))
+                            {
+                                <div class="mb-3">
+                                    <RadzenText TextStyle="TextStyle.Overline">@Input.CustomLabel2</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Custom2</b></RadzenText>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(Input.CustomLabel3))
+                            {
+                                <div class="mb-3">
+                                    <RadzenText TextStyle="TextStyle.Overline">@Input.CustomLabel3</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Custom3</b></RadzenText>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(Input.CustomLabel4))
+                            {
+                                <div class="mb-3">
+                                    <RadzenText TextStyle="TextStyle.Overline">@Input.CustomLabel4</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Custom4</b></RadzenText>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(Input.CustomLabel5))
+                            {
+                                <div class="mb-3">
+                                    <RadzenText TextStyle="TextStyle.Overline">@Input.CustomLabel5</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Custom5</b></RadzenText>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="col-md-6">
+                            @if (!string.IsNullOrWhiteSpace(Input.CustomLabel6))
+                            {
+                                <div class="mb-3">
+                                    <RadzenText TextStyle="TextStyle.Overline">@Input.CustomLabel6</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Custom6</b></RadzenText>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(Input.CustomLabel7))
+                            {
+                                <div class="mb-3">
+                                    <RadzenText TextStyle="TextStyle.Overline">@Input.CustomLabel7</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Custom7</b></RadzenText>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(Input.CustomLabel8))
+                            {
+                                <div class="mb-3">
+                                    <RadzenText TextStyle="TextStyle.Overline">@Input.CustomLabel8</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Custom8</b></RadzenText>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(Input.CustomLabel9))
+                            {
+                                <div class="mb-3">
+                                    <RadzenText TextStyle="TextStyle.Overline">@Input.CustomLabel9</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Custom9</b></RadzenText>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(Input.CustomLabel10))
+                            {
+                                <div class="mb-3">
+                                    <RadzenText TextStyle="TextStyle.Overline">@Input.CustomLabel10</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Subtitle2"><b>@Input.Custom10</b></RadzenText>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </RadzenFieldset>
+            </div>
+        </div>
+    }
+
+</RadzenCard>
+
+<br />
+
+<RadzenCard>
+    @if (Input is null)
+    {
+        <em>Loading...</em>
+    }
+    else
+    {
+        <div class="row">
+            <EditForm Model="Input" OnValidSubmit="UpdateLead">
+                <DataAnnotationsValidator />
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <RadzenFieldset Text="Lead Info">
+                            <div class="mb-3">
+                                <RadzenLabel>Call Memo (optional)</RadzenLabel>
+                                <RadzenTextArea @bind-Value="Input.CallMemo" class="w-100" Rows="9" />
+                                <ValidationMessage For="() => Input.CallMemo" class="text-danger" />
+                            </div>
+                        </RadzenFieldset>
+                    </div>
+
+                    <div class="col-md-6">
+                        <RadzenFieldset Text="Disposition Info">
+                            <div class="mb-3">
+                                <RadzenLabel>Disposition Type (optional)</RadzenLabel>
+                                <RadzenDropDown @bind-Value="Input.DispositionTypeId" AllowClear Data="DispositionTypes" ValueProperty="Id" TextProperty="Name" class="w-100" />
+                                <ValidationMessage For="() => Input.DispositionTypeId" class="text-danger" />
+                            </div>
+
+                            @if (Input.DispositionTypeId is not null)
+                            {
+                                <div class="mb-3">
+                                    <RadzenLabel>Disposition Comment</RadzenLabel>
+                                    <RadzenTextArea @bind-Value="Input.DispositionComment" class="w-100" Rows="6" />
+                                    <ValidationMessage For="() => Input.DispositionComment" class="text-danger" />
+                                </div>
+                            }
+                        </RadzenFieldset>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <RadzenButton ButtonType="ButtonType.Submit">Update</RadzenButton>
+                </div>
+            </EditForm>
+        </div>
+    }
+</RadzenCard>
+
+

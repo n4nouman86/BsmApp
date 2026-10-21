@@ -1,4 +1,7 @@
 using BsmJoin.Api.Identity;
+using BsmJoin.Api.Features.LeadLogix.Dashboard;
+using BsmJoin.Api.Features.LeadVentures.Dashboard;
+using BsmJoin.Api.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +18,11 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+builder.Services.AddLeadLogixDashboard(builder.Configuration, builder.Environment);
+builder.Services.AddLeadVenturesDashboard(builder.Configuration, builder.Environment);
+builder.Services.AddExceptionHandler<CompanionDashboardExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -47,7 +55,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("WebUi", policy => policy
-        .WithOrigins("http://localhost:5173", "https://localhost:5173")
+        .WithOrigins("http://localhost:5173", "https://localhost:5173", "http://localhost:5174")
         .AllowAnyHeader()
         .AllowAnyMethod());
 });
@@ -58,6 +66,8 @@ builder.Services.AddOpenApi();
 var app = builder.Build();
 
 await SeedDevelopmentAdminAsync(app);
+
+app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -124,6 +134,34 @@ static async Task SeedDevelopmentAdminAsync(WebApplication app)
         if (!roleResult.Succeeded)
         {
             throw new InvalidOperationException(string.Join("; ", roleResult.Errors.Select(error => error.Description)));
+        }
+    }
+
+    const string demoEmail = "demo@bsmjoin.test";
+    var demoUser = await userManager.FindByEmailAsync(demoEmail);
+    if (demoUser is null)
+    {
+        demoUser = new ApplicationUser
+        {
+            UserName = demoEmail,
+            Email = demoEmail,
+            EmailConfirmed = true,
+            FirstName = "Demo",
+            LastName = "Administrator",
+        };
+
+        var demoResult = await userManager.CreateAsync(demoUser, "Demo@12345");
+        if (!demoResult.Succeeded)
+        {
+            throw new InvalidOperationException(string.Join("; ", demoResult.Errors.Select(error => error.Description)));
+        }
+    }
+    if (!await userManager.IsInRoleAsync(demoUser, adminRole))
+    {
+        var demoRoleResult = await userManager.AddToRoleAsync(demoUser, adminRole);
+        if (!demoRoleResult.Succeeded)
+        {
+            throw new InvalidOperationException(string.Join("; ", demoRoleResult.Errors.Select(error => error.Description)));
         }
     }
 }

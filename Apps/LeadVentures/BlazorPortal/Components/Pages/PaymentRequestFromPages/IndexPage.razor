@@ -1,0 +1,32 @@
+﻿@page "/PaymentRequestFromIndex"
+@attribute [Authorize(Roles = "Super Admin")]
+<PageTitle>Payment Request Froms</PageTitle>
+
+@inject IDbContextFactory<ApplicationDbContext> contextFactory
+
+<PageHeading HeadingText="Payment Request Froms" />
+
+@if (Froms is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <RadzenDataGrid Data="Froms">
+        <Columns>
+            <RadzenDataGridColumn Property="FromName" Title="From Name" />
+            <RadzenDataGridColumn Property="ServerHost" Title="Server Host" />
+            <RadzenDataGridColumn Property="ServerPort" Title="Server Port" />
+            <RadzenDataGridColumn Property="UserName" Title="User Name" />
+            <RadzenDataGridColumn Title="Action">
+                <Template context="from">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="8">
+                        <RadzenLink Path="@string.Concat("/PaymentRequestFromEdit/", from.Id)">
+                            <RadzenButton Icon="edit" Size="ButtonSize.ExtraSmall" title="Edit" />
+                        </RadzenLink>
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}

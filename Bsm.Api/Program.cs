@@ -1,6 +1,9 @@
 using Bsm.Api.Identity;
 using Bsm.Api.Features.Auth;
+using Bsm.Api.Features.Tcpa;
 using Bsm.Api.Features.Leads;
+using Bsm.Api.Features.DncNames;
+using Bsm.Api.Features.DncNumbers;
 using Bsm.Api.Features.LeadStatuses;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -15,8 +18,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.Configure<TcpaOptions>(builder.Configuration.GetSection("Tcpa"));
+builder.Services.AddHttpClient<ITcpaService, TcpaService>(client => client.Timeout = TimeSpan.FromSeconds(15));
 builder.Services.AddScoped<ILeadService, LeadService>();
 builder.Services.AddScoped<ILeadStatusService, LeadStatusService>();
+builder.Services.AddScoped<IDncNumberService, DncNumberService>();
+builder.Services.AddScoped<IDncNameService, DncNameService>();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");
 

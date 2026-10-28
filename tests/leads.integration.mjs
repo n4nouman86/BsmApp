@@ -40,7 +40,7 @@ test('Leads CRUD, SQL field limits, and ownership isolation', async () => {
   const otherStatus = await makeStatus('B')
   const payload = {
     statusId: status.id,
-    phoneNumber: '555-0100', firstName: 'Integration', lastName: 'Lead',
+    phoneNumber: '2125550134', firstName: 'Integration', lastName: 'Lead',
     email: `lead@example.test`, dateOfBirth: '1990-05-20',
     streetAddress: '100 Example Street', city: 'Austin', state: 'TX', postalCode: '78701',
     haveSpouse: 'Yes', spouseName: 'Example Spouse', spouseDateOfBirth: '1991-06-21',
@@ -117,6 +117,11 @@ test('Leads CRUD, SQL field limits, and ownership isolation', async () => {
     assert.equal((await request('DELETE', `/api/leadstatuses/${otherStatus.id}`, admin)).status, 409, 'Statuses in use cannot be deleted')
     assert.equal((await request('POST', '/api/leads', a.token, { ...payload, statusId: 2147483647 })).status, 400)
     assert.equal((await request('PUT', path, a.token, { ...payload, statusId: 2147483647 })).status, 400)
+    assert.equal((await request('POST', '/api/leads', a.token, { ...payload, phoneNumber: '555-0100' })).status, 400, 'Short phone numbers are rejected')
+    assert.equal((await request('PUT', path, a.token, { ...payload, phoneNumber: '555-0100' })).status, 400)
+    const formattedPhone = await request('PUT', path, a.token, { ...payload, phoneNumber: '(212) 555-0134' })
+    assert.equal(formattedPhone.status, 200)
+    assert.equal(formattedPhone.data.phoneNumber, '2125550134', 'Phone numbers are stored as 10 digits')
     const missingStatus = { ...payload }
     delete missingStatus.statusId
     const invalidPayloads = [

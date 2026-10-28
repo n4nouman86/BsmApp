@@ -1,15 +1,13 @@
-import { Contact, LayoutDashboard, ListChecks, LogOut, Sparkles, Users, X } from 'lucide-react'
+import { Contact, LayoutDashboard, ListChecks, LogOut, PhoneOff, Sparkles, UserX, Users, X } from 'lucide-react'
 import { getCurrentUser } from '../session'
 
 type AppSidebarProps = {
-  activePage: 'overview' | 'users' | 'leads' | 'leadstatuses'
-  usersCount?: number
-  isLoading: boolean
+  activePage: 'overview' | 'users' | 'leads' | 'leadstatuses' | 'dnc' | 'dncnames'
   isOpen: boolean
   onClose: () => void
 }
 
-function AppSidebar({ activePage, usersCount, isLoading, isOpen, onClose }: AppSidebarProps) {
+function AppSidebar({ activePage, isOpen, onClose }: AppSidebarProps) {
   const user = getCurrentUser()
   const displayName = user ? `${user.firstName} ${user.lastName}` : 'Signed-in user'
   const initials = user ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase() : '?'
@@ -44,10 +42,16 @@ function AppSidebar({ activePage, usersCount, isLoading, isOpen, onClose }: AppS
             <ListChecks size={18} strokeWidth={1.8} /><span>Lead statuses</span>
           </a>
           {user?.roles.includes('Admin') && <>
+            <span className="nav-label nav-label-spaced">DNC</span>
+            <a className={`nav-item ${activePage === 'dnc' ? 'nav-item-active' : ''}`} href="/dnc">
+              <PhoneOff size={18} strokeWidth={1.8} /><span>DNC Numbers</span>
+            </a>
+            <a className={`nav-item ${activePage === 'dncnames' ? 'nav-item-active' : ''}`} href="/dnc-names">
+              <UserX size={18} strokeWidth={1.8} /><span>DNC Names</span>
+            </a>
             <span className="nav-label nav-label-spaced">Administration</span>
             <a className={`nav-item ${activePage === 'users' ? 'nav-item-active' : ''}`} href="/users">
               <Users size={18} strokeWidth={1.8} /><span>Users</span>
-              {!isLoading && usersCount !== undefined && <span className="nav-count">{usersCount}</span>}
             </a>
           </>}
         </nav>

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Menu, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import AppSidebar from '../../Shared/AppSidebar'
+import { toggleNavigation } from '../../Shared/sidebarToggle'
+import { showToast } from '../../Shared/toast'
 import { apiUrl, authenticatedFetch, formatDate, getAccessToken, getCurrentUser } from '../../session'
 import '../Leads/Leads.css'
 
@@ -27,7 +29,6 @@ function LeadStatusesPage() {
   const [name, setName] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [formError, setFormError] = useState('')
-  const [notice, setNotice] = useState('')
   const dialogRef = useRef<HTMLDialogElement>(null)
   const isAdmin = getCurrentUser()?.roles.includes('Admin') ?? false
   const modalOpen = editor !== null || deleting !== null
@@ -62,7 +63,6 @@ function LeadStatusesPage() {
   const openEditor = (status?: LeadStatus) => {
     setName(status?.name ?? '')
     setFormError('')
-    setNotice('')
     setEditor({ status })
   }
 
@@ -90,7 +90,7 @@ function LeadStatusesPage() {
       setStatuses(current => (editing ? current.map(status => status.id === saved.id ? saved : status) : [...current, saved])
         .sort((a, b) => a.name.localeCompare(b.name)))
       setEditor(null)
-      setNotice(editing ? 'Status updated.' : 'Status created.')
+      showToast(editing ? 'Status updated.' : 'Status created.')
     } catch (saveError) {
       setFormError(saveError instanceof Error ? saveError.message : 'Unable to save this status.')
     } finally {
@@ -107,7 +107,7 @@ function LeadStatusesPage() {
       if (!response.ok) throw new Error(await responseError(response, 'Unable to delete this status.'))
       setStatuses(current => current.filter(status => status.id !== deleting.id))
       setDeleting(null)
-      setNotice('Status deleted.')
+      showToast('Status deleted.')
     } catch (deleteError) {
       setFormError(deleteError instanceof Error ? deleteError.message : 'Unable to delete this status.')
     } finally {
@@ -119,10 +119,10 @@ function LeadStatusesPage() {
 
   return (
     <div className="app-shell">
-      <AppSidebar activePage="leadstatuses" isLoading={isLoading} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <AppSidebar activePage="leadstatuses" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="main-content">
         <header className="topbar">
-          <button className="icon-button menu-button" onClick={() => setSidebarOpen(true)} aria-label="Open navigation"><Menu size={20} /></button>
+          <button className="icon-button menu-button" onClick={() => toggleNavigation(() => setSidebarOpen(true))} aria-label="Toggle navigation"><Menu size={20} /></button>
           <div className="breadcrumb"><span>Workspace</span><span className="breadcrumb-slash">/</span><strong>Lead statuses</strong></div>
         </header>
         <div className="page-content">
@@ -130,7 +130,6 @@ function LeadStatusesPage() {
             <div><p className="eyebrow">Lead statuses</p><h1>Lead statuses</h1><p className="welcome-copy">{isAdmin ? 'Manage the statuses available for leads.' : 'Statuses available for leads.'}</p></div>
             {isAdmin && <button className="primary-button" onClick={() => openEditor()}><Plus size={17} />Create status</button>}
           </section>
-          {notice && <p className="lead-notice" role="status">{notice}</p>}
           {error && <div className="users-error" role="alert">{error} <button type="button" onClick={() => { setError(''); setIsLoading(true); setReload(value => value + 1) }}>Retry</button></div>}
           <section className="panel members-directory">
             <div className="directory-toolbar">
@@ -149,7 +148,7 @@ function LeadStatusesPage() {
                             <td><strong>{status.name}</strong></td><td>{formatDate(status.createdOn)}</td>
                             {isAdmin && <td className="user-row-actions">
                               <button className="row-menu" aria-label={`Edit status ${status.name}`} onClick={() => openEditor(status)}><Pencil size={16} /></button>
-                              <button className="row-menu" aria-label={`Delete status ${status.name}`} onClick={() => { setFormError(''); setNotice(''); setDeleting(status) }}><Trash2 size={16} /></button>
+                              <button className="row-menu" aria-label={`Delete status ${status.name}`} onClick={() => { setFormError(''); setDeleting(status) }}><Trash2 size={16} /></button>
                             </td>}
                           </tr>
                         ))}

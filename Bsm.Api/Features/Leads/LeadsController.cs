@@ -1,12 +1,13 @@
 using System.Security.Claims;
 using Bsm.Api.Controllers;
+using Bsm.Api.Features.Tcpa;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bsm.Api.Features.Leads;
 
 [Authorize]
-public sealed class LeadsController(ILeadService service) : ApiControllerBase
+public sealed class LeadsController(ILeadService service, ITcpaService tcpa) : ApiControllerBase
 {
     [HttpGet]
     [EndpointSummary("List leads owned by the current user, or all leads for administrators.")]
@@ -42,7 +43,9 @@ public sealed class LeadsController(ILeadService service) : ApiControllerBase
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
         if (!await service.StatusExistsAsync(request.StatusId!.Value, cancellationToken)) return InvalidStatus();
-        var lead = await service.CreateAsync(request, userId, cancellationToken);
+        var (phoneError, phone) = await CheckPhoneAsync(request.PhoneNumber, cancellationToken);
+        if (phoneError is not null) return phoneError;
+        var lead = await service.CreateAsync(request with { PhoneNumber = phone! }, userId, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = lead.Id }, lead);
     }
 
@@ -57,7 +60,20 @@ public sealed class LeadsController(ILeadService service) : ApiControllerBase
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
         if (!await service.StatusExistsAsync(request.StatusId!.Value, cancellationToken)) return InvalidStatus();
-        var lead = await service.UpdateAsync(id, request, userId, User.IsInRole("Admin"), cancellationToken);
+        var existing = await service.GetByIdAsync(id, userId, User.IsInRole("Admin"), cancellationToken);
+        if (existing is null) return NotFound();
+
+        // Only scrub when the number actually changed, so edits to other fields do not spend a TCPA lookup.
+        var normalized = tcpa.Normalize(request.PhoneNumber);
+        var phone = normalized;
+        if (normalized is null || normalized != tcpa.Normalize(existing.PhoneNumber))
+        {
+            var (phoneError, checkedPhone) = await CheckPhoneAsync(request.PhoneNumber, cancellationToken);
+            if (phoneError is not null) return phoneError;
+            phone = checkedPhone;
+        }
+
+        var lead = await service.UpdateAsync(id, request with { PhoneNumber = phone ?? request.PhoneNumber }, userId, User.IsInRole("Admin"), cancellationToken);
         return lead is null ? NotFound() : Ok(lead);
     }
 
@@ -73,6 +89,23 @@ public sealed class LeadsController(ILeadService service) : ApiControllerBase
         return await service.DeleteAsync(id, userId, User.IsInRole("Admin"), cancellationToken)
             ? NoContent() : NotFound();
     }
+
+    private async Task<(ActionResult? Error, string? Phone)> CheckPhoneAsync(string phoneNumber, CancellationToken cancellationToken)
+    {
+        var phone = tcpa.Normalize(phoneNumber);
+        if (phone is null) return (PhoneProblem("Enter a valid 10-digit US phone number."), null);
+
+        var result = await tcpa.CheckAsync(phone, cancellationToken);
+        if (result.Status == "unavailable")
+        {
+            return (Problem("The TCPA check is unavailable. Please try again.", statusCode: StatusCodes.Status503ServiceUnavailable), null);
+        }
+
+        return result.IsClean ? (null, phone) : (PhoneProblem("This number cannot be used because it is on the TCPA litigator list."), null);
+    }
+
+    private BadRequestObjectResult PhoneProblem(string message) =>
+        BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { [nameof(SaveLeadRequest.PhoneNumber)] = [message] }));
 
     private BadRequestObjectResult InvalidStatus() =>
         BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>

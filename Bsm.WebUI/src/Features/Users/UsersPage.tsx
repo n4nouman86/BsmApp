@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ArrowUpRight, Check, CheckCircle2, Edit2, Eye, EyeOff, KeyRound, Menu, Plus, Search, Users, X } from 'lucide-react'
-import { apiUrl, authenticatedFetch, formatDate, getAccessToken, getCurrentUser } from '../../session'
+import { apiUrl, authenticatedFetch, formatDate, getAccessToken } from '../../session'
 import type { DirectoryUser } from '../../session'
 import AppSidebar from '../../Shared/AppSidebar'
+import { toggleNavigation } from '../../Shared/sidebarToggle'
 
 type ApiError = {
   message?: string
@@ -41,10 +42,6 @@ function UsersPage() {
   const [isSavingEdit, setIsSavingEdit] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(() => sessionStorage.getItem('sidebar-open') === 'true')
-  const currentUser = getCurrentUser()
-  const initials = currentUser
-    ? `${currentUser.firstName[0] ?? ''}${currentUser.lastName[0] ?? ''}`.toUpperCase()
-    : '?'
   const closeSidebar = () => {
     setSidebarOpen(false)
     sessionStorage.removeItem('sidebar-open')
@@ -224,12 +221,11 @@ function UsersPage() {
 
   return (
     <div className="app-shell">
-      <AppSidebar activePage="users" usersCount={members.length} isLoading={isLoading} isOpen={sidebarOpen} onClose={closeSidebar} />
+      <AppSidebar activePage="users" isOpen={sidebarOpen} onClose={closeSidebar} />
       <main className="main-content users-page">
         <header className="topbar">
-          <button className="icon-button menu-button" onClick={openSidebar} aria-label="Open navigation"><Menu size={20} /></button>
+          <button className="icon-button menu-button" onClick={() => toggleNavigation(openSidebar)} aria-label="Toggle navigation"><Menu size={20} /></button>
           <div className="breadcrumb"><span>Workspace</span><span className="breadcrumb-slash">/</span><strong>Users</strong></div>
-          <div className="topbar-actions"><div className="top-profile">{initials}</div></div>
         </header>
         <div className="users-content">
         <section className="users-heading">

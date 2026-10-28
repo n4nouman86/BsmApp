@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowUpRight, Menu, Plus, Sparkles, Users } from 'lucide-react'
 import AppSidebar from '../../Shared/AppSidebar'
+import { toggleNavigation } from '../../Shared/sidebarToggle'
 import { apiUrl, authenticatedFetch, formatDate, getAccessToken, getCurrentUser } from '../../session'
 import type { DirectoryUser } from '../../session'
 
@@ -67,12 +68,11 @@ function OverviewPage() {
 
   return (
     <div className="app-shell">
-      <AppSidebar activePage="overview" usersCount={users.length} isLoading={isLoading} isOpen={sidebarOpen} onClose={closeSidebar} />
+      <AppSidebar activePage="overview" isOpen={sidebarOpen} onClose={closeSidebar} />
       <main className="main-content">
         <header className="topbar">
-          <button className="icon-button menu-button" onClick={openSidebar} aria-label="Open navigation"><Menu size={20} /></button>
+          <button className="icon-button menu-button" onClick={() => toggleNavigation(openSidebar)} aria-label="Toggle navigation"><Menu size={20} /></button>
           <div className="breadcrumb"><span>Workspace</span><span className="breadcrumb-slash">/</span><strong>Overview</strong></div>
-          <div className="topbar-actions"><div className="top-profile">{currentUser ? `${currentUser.firstName[0] ?? ''}${currentUser.lastName[0] ?? ''}`.toUpperCase() : '?'}</div></div>
         </header>
         <div className="page-content">
           <section className="welcome-row">

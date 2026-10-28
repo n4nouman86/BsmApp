@@ -16,6 +16,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
+  "statusId": 1,
   "phoneNumber": "555-0100",
   "firstName": "Sample",
   "lastName": "Lead",
@@ -46,6 +47,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
+  "statusId": 1,
   "phoneNumber": "555-0101",
   "firstName": "Updated",
   "lastName": "Lead",

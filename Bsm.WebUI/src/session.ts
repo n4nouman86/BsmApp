@@ -30,6 +30,8 @@ export function getAccessToken() {
 
 export async function authenticatedFetch(input: RequestInfo | URL, init?: RequestInit) {
   const response = await fetch(input, init)
+  const refreshedToken = response.headers.get('X-Refreshed-Token')
+  if (refreshedToken) localStorage.setItem('bsmjoin_token', refreshedToken)
   if (response.status === 401) {
     localStorage.removeItem('bsmjoin_token')
     localStorage.removeItem('bsmjoin_user')

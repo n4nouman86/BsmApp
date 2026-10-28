@@ -52,6 +52,9 @@ body { font-family: 'DM Sans', sans-serif; }
 .nav-item { color: #b6becb; }
 .nav-item-active { background: linear-gradient(90deg, #475569, #303945); box-shadow: inset 3px 0 #cbd5e1; }
 .nav-label { color: #a1aab8; }
+.brand-row { height: auto; margin-bottom: 30px; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+.brand-sub { margin-top: 3px; color: #a1aab8; font-size: 10px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
 .nav-count { color: #cbd5e1; }
 .sidebar-footer { border-color: #3b4452; }
 .usage-bar { background: #3b4452; }

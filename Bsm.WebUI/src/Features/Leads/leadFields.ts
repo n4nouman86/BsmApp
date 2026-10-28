@@ -1,4 +1,5 @@
 export type LeadValues = {
+  statusId: string
   phoneNumber: string
   firstName: string
   lastName: string
@@ -24,10 +25,12 @@ export type LeadValues = {
 }
 
 export type Lead = Omit<LeadValues,
-  'city' | 'postalCode' | 'spouseName' | 'spouseDateOfBirth' | 'hopeType' |
+  'statusId' | 'city' | 'postalCode' | 'spouseName' | 'spouseDateOfBirth' | 'hopeType' |
   'haveHomeClaims' | 'currentHomeCarrier' | 'anyClaimInPast3Years'
 > & {
   id: number
+  statusId: number
+  statusName: string
   appUserId: string | null
   createdOn: string
   city: string | null
@@ -43,9 +46,9 @@ export type Lead = Omit<LeadValues,
 type LeadField = {
   name: keyof LeadValues
   label: string
-  group: 'Lead detail' | 'Spouse details' | 'Auto insurance' | 'Home insurance'
+  group: 'Lead detail' | 'Spouse details' | 'Auto insurance' | 'Home insurance' | 'Status'
   required?: boolean
-  type?: 'email' | 'tel' | 'date'
+  type?: 'email' | 'tel' | 'date' | 'status'
   maxLength?: number
 }
 
@@ -72,12 +75,14 @@ export const leadFields: LeadField[] = [
   { name: 'haveHomeClaims', label: 'Have home claims', group: 'Home insurance' },
   { name: 'currentHomeCarrier', label: 'Current home carrier', group: 'Home insurance' },
   { name: 'anyClaimInPast3Years', label: 'Any claim in past 3 years', group: 'Home insurance' },
+  { name: 'statusId', label: 'Status', type: 'status', group: 'Status', required: true },
 ]
 
-export const leadGroups = ['Lead detail', 'Spouse details', 'Auto insurance', 'Home insurance'] as const
+export const leadGroups = ['Lead detail', 'Spouse details', 'Auto insurance', 'Home insurance', 'Status'] as const
 
 export function leadValues(lead?: Lead): LeadValues {
   return {
+    statusId: lead ? String(lead.statusId) : '',
     phoneNumber: lead?.phoneNumber ?? '',
     firstName: lead?.firstName ?? '',
     lastName: lead?.lastName ?? '',

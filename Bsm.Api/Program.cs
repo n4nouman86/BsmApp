@@ -1,5 +1,7 @@
 using Bsm.Api.Identity;
+using Bsm.Api.Features.Auth;
 using Bsm.Api.Features.Leads;
+using Bsm.Api.Features.LeadStatuses;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +14,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ILeadService, LeadService>();
+builder.Services.AddScoped<ILeadStatusService, LeadStatusService>();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");
 
@@ -45,6 +49,25 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         ClockSkew = TimeSpan.Zero,
     };
+    options.Events = new JwtBearerEvents
+    {
+        // Sliding expiration: once half of the token's lifetime has passed, hand the client a fresh token.
+        OnTokenValidated = async context =>
+        {
+            var token = context.SecurityToken;
+            if (token.ValidFrom == DateTime.MinValue) return;
+            var lifetime = token.ValidTo - token.ValidFrom;
+            if (DateTime.UtcNow - token.ValidFrom < lifetime / 2) return;
+
+            var userId = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (userId is null) return;
+            var user = await context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>().FindByIdAsync(userId);
+            if (user is null) { context.Fail("User no longer exists."); return; }
+
+            var refreshed = await context.HttpContext.RequestServices.GetRequiredService<ITokenService>().CreateAsync(user);
+            context.Response.Headers["X-Refreshed-Token"] = refreshed.AccessToken;
+        },
+    };
 });
 
 builder.Services.AddCors(options =>
@@ -52,7 +75,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("WebUi", policy => policy
         .WithOrigins("http://localhost:5173", "https://localhost:5173", "http://localhost:5174")
         .AllowAnyHeader()
-        .AllowAnyMethod());
+        .AllowAnyMethod()
+        .WithExposedHeaders("X-Refreshed-Token"));
 });
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

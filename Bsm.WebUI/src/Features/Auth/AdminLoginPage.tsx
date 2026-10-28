@@ -40,11 +40,11 @@ function AdminLoginPage() {
 
   return (
     <main className="auth-page">
-      <section className="auth-art"><div className="auth-brand"><span><Sparkles size={17} /></span> bsm</div><div className="auth-art-content"><p className="eyebrow">One workspace. Everything aligned.</p><h1>Bring your people<br /><em>into focus.</em></h1><p>Manage members, access and activity from one calm, connected workspace.</p></div><div className="auth-art-footer"><span>Secure workspace access</span><span>© 2026 bsm</span></div></section>
+      <section className="auth-art"><div className="auth-brand"><span><Sparkles size={17} /></span> BSM</div><div className="auth-art-content"><p className="eyebrow">One workspace. Everything aligned.</p><h1>Bring your people<br /><em>into focus.</em></h1><p>Manage members, access and activity from one calm, connected workspace.</p></div><div className="auth-art-footer"><span>Secure workspace access</span><span>© 2026 BSM</span></div></section>
       <section className="auth-form-side">
         <div className="auth-form-wrap">
-          <div className="mobile-auth-brand"><span><Sparkles size={16} /></span> bsm</div>
-          <div className="auth-heading"><p className="eyebrow">Workspace access</p><h2>Welcome back</h2><p>Sign in to manage your bsm workspace.</p></div>
+          <div className="mobile-auth-brand"><span><Sparkles size={16} /></span> BSM</div>
+          <div className="auth-heading"><p className="eyebrow">Workspace access</p><h2>Welcome back</h2><p>Sign in to manage your BSM workspace.</p></div>
           {isDevelopment && (
             <aside className="auth-demo" aria-label="Development demo credentials">
               <strong>Local development login</strong>

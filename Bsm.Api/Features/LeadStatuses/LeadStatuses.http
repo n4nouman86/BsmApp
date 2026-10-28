@@ -1,0 +1,28 @@
+@baseUrl = http://localhost:5049
+@token = paste-jwt-here
+
+### List statuses
+GET {{baseUrl}}/api/leadstatuses
+Authorization: Bearer {{token}}
+
+### Create status (Admin)
+POST {{baseUrl}}/api/leadstatuses
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "New" }
+
+### Rename status (Admin)
+PUT {{baseUrl}}/api/leadstatuses/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Contacted" }
+
+### Delete status (Admin)
+DELETE {{baseUrl}}/api/leadstatuses/1
+Authorization: Bearer {{token}}
+
+### Missing id returns 404
+GET {{baseUrl}}/api/leadstatuses/999999
+Authorization: Bearer {{token}}

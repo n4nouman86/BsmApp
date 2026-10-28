@@ -48,6 +48,8 @@ public sealed record SaveLeadRequest
     public string? CurrentHomeCarrier { get; init; }
     [MaxLength(50)]
     public string? AnyClaimInPast3Years { get; init; }
+    [Required, Range(1, int.MaxValue)]
+    public required int? StatusId { get; init; }
 }
 
 /// <summary>A lead visible to its owner or an administrator. Birth dates are calendar dates without a time zone.</summary>
@@ -76,4 +78,6 @@ public sealed record LeadResponse(
     string? HaveHomeClaims,
     string? CurrentHomeCarrier,
     string? AnyClaimInPast3Years,
+    int StatusId,
+    string StatusName,
     DateTimeOffset CreatedOn);

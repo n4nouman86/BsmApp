@@ -14,6 +14,7 @@ public sealed class LeadConfiguration : IEntityTypeConfiguration<Lead>
         builder.Property(lead => lead.DateOfBirth).HasColumnType("date");
         builder.Property(lead => lead.SpouseDateOfBirth).HasColumnType("date");
         builder.Property(lead => lead.CreatedOn).HasColumnType("datetime2(3)");
+        builder.HasOne(lead => lead.Status).WithMany().HasForeignKey(lead => lead.StatusId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(lead => lead.PhoneNumber).IsRequired();
         builder.Property(lead => lead.FirstName).IsRequired();

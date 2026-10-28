@@ -29,7 +29,17 @@ test('Leads CRUD, SQL field limits, and ownership isolation', async () => {
   const users = []
   const leads = new Set()
   const suffix = randomUUID()
+  const statusIds = []
+  const makeStatus = async name => {
+    const result = await request('POST', '/api/leadstatuses', admin, { name: `IT ${name} ${suffix.slice(0, 8)}` })
+    if (result.data?.id) statusIds.push(result.data.id)
+    assert.equal(result.status, 201, 'Temporary status creation must succeed')
+    return result.data
+  }
+  const status = await makeStatus('A')
+  const otherStatus = await makeStatus('B')
   const payload = {
+    statusId: status.id,
     phoneNumber: '555-0100', firstName: 'Integration', lastName: 'Lead',
     email: `lead@example.test`, dateOfBirth: '1990-05-20',
     streetAddress: '100 Example Street', city: 'Austin', state: 'TX', postalCode: '78701',
@@ -98,7 +108,19 @@ test('Leads CRUD, SQL field limits, and ownership isolation', async () => {
     assert.equal(allowed.data.makeAndModel.length, 1024)
     const missingBirthDate = { ...payload }
     delete missingBirthDate.dateOfBirth
+    assert.equal(allowed.data.statusName, status.name)
+    const reassigned = await request('PUT', path, a.token, { ...payload, statusId: otherStatus.id })
+    assert.equal(reassigned.status, 200)
+    assert.equal(reassigned.data.statusId, otherStatus.id)
+    assert.equal(reassigned.data.statusName, otherStatus.name)
+    assert.equal((await request('GET', path, a.token)).data.statusName, otherStatus.name)
+    assert.equal((await request('DELETE', `/api/leadstatuses/${otherStatus.id}`, admin)).status, 409, 'Statuses in use cannot be deleted')
+    assert.equal((await request('POST', '/api/leads', a.token, { ...payload, statusId: 2147483647 })).status, 400)
+    assert.equal((await request('PUT', path, a.token, { ...payload, statusId: 2147483647 })).status, 400)
+    const missingStatus = { ...payload }
+    delete missingStatus.statusId
     const invalidPayloads = [
+      missingStatus,
       missingBirthDate,
       { ...payload, dateOfBirth: null },
       { ...payload, dateOfBirth: '2026-02-30' },
@@ -132,6 +154,10 @@ test('Leads CRUD, SQL field limits, and ownership isolation', async () => {
     for (const id of leads) {
       const result = await request('DELETE', `/api/leads/${id}`, admin)
       if (![204, 404].includes(result.status)) failures.push(`lead ${id}: HTTP ${result.status}`)
+    }
+    for (const id of statusIds) {
+      const result = await request('DELETE', `/api/leadstatuses/${id}`, admin)
+      if (![204, 404].includes(result.status)) failures.push(`status ${id}: HTTP ${result.status}`)
     }
     for (const { id } of users) {
       const result = await request('DELETE', `/api/users/${id}`, admin)

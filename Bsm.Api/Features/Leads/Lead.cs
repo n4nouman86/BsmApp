@@ -1,3 +1,5 @@
+using Bsm.Api.Features.LeadStatuses;
+
 namespace Bsm.Api.Features.Leads;
 
 public sealed class Lead
@@ -26,5 +28,7 @@ public sealed class Lead
     public string? HaveHomeClaims { get; set; }
     public string? CurrentHomeCarrier { get; set; }
     public string? AnyClaimInPast3Years { get; set; }
+    public int StatusId { get; set; }
+    public LeadStatus? Status { get; set; }
     public DateTime CreatedOn { get; set; }
 }

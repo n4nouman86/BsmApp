@@ -29,7 +29,10 @@ function LeadsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [notice, setNotice] = useState('')
+  const [statuses, setStatuses] = useState<{ id: number; name: string }[]>([])
+  const [confirm, setConfirm] = useState<'save' | 'discard' | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const confirmRef = useRef<HTMLDialogElement>(null)
   const user = getCurrentUser()
   const isAdmin = user?.roles.includes('Admin') ?? false
   const modalOpen = editor !== null || details !== null || deleting !== null
@@ -40,15 +43,23 @@ function LeadsPage() {
   }, [modalOpen])
 
   useEffect(() => {
+    if (confirm) confirmRef.current?.showModal()
+    else confirmRef.current?.close()
+  }, [confirm])
+
+  useEffect(() => {
     let active = true
     const load = async () => {
       try {
-        const response = await authenticatedFetch(`${apiUrl}/leads`, {
-          headers: { Authorization: `Bearer ${getAccessToken()}` },
-        })
+        const [response, statusResponse] = await Promise.all([
+          authenticatedFetch(`${apiUrl}/leads`, { headers: { Authorization: `Bearer ${getAccessToken()}` } }),
+          authenticatedFetch(`${apiUrl}/leadstatuses`, { headers: { Authorization: `Bearer ${getAccessToken()}` } }),
+        ])
         if (!response.ok) throw new Error(await responseError(response, 'Unable to load leads.'))
+        if (!statusResponse.ok) throw new Error(await responseError(statusResponse, 'Unable to load lead statuses.'))
         const data: Lead[] = await response.json()
-        if (active) setLeads(data)
+        const statusData: { id: number; name: string }[] = await statusResponse.json()
+        if (active) { setLeads(data); setStatuses(statusData) }
       } catch (loadError) {
         if (active) setError(loadError instanceof Error ? loadError.message : 'Unable to load leads.')
       } finally {
@@ -60,7 +71,7 @@ function LeadsPage() {
   }, [reload])
 
   const filtered = useMemo(() => leads.filter(lead =>
-    `${lead.firstName} ${lead.lastName} ${lead.email} ${lead.phoneNumber} ${lead.city ?? ''} ${lead.state}`
+    `${lead.firstName} ${lead.lastName} ${lead.email} ${lead.phoneNumber} ${lead.city ?? ''} ${lead.state} ${lead.statusName}`
       .toLowerCase().includes(search.toLowerCase())), [leads, search])
 
   const openEditor = (lead?: Lead) => {
@@ -78,15 +89,26 @@ function LeadsPage() {
     setFormError('')
   }
 
-  const save = async (event: FormEvent<HTMLFormElement>) => {
+  const requestClose = () => {
+    if (isSaving) return
+    if (editor) setConfirm('discard')
+    else closeModal()
+  }
+
+  const submitForm = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setConfirm('save')
+  }
+
+  const save = async () => {
+    setConfirm(null)
     if (!editor) return
     setIsSaving(true)
     setFormError('')
     const editing = editor.lead
     try {
       const body = Object.fromEntries(leadFields.map(field =>
-        [field.name, !field.required && !values[field.name].trim() ? null : values[field.name].trim()]))
+        [field.name, field.type === 'status' ? Number(values.statusId) : !field.required && !values[field.name].trim() ? null : values[field.name].trim()]))
       const response = await authenticatedFetch(`${apiUrl}/leads${editing ? `/${editing.id}` : ''}`, {
         method: editing ? 'PUT' : 'POST',
         headers: { Authorization: `Bearer ${getAccessToken()}`, 'Content-Type': 'application/json' },
@@ -145,14 +167,14 @@ function LeadsPage() {
             </div>
             <div className="member-table-wrap">
               <table>
-                <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>State</th><th>Created</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>State</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
                 <tbody>
-                  {isLoading ? <tr><td colSpan={6} className="empty-members">Loading leads...</td></tr>
-                    : error ? <tr><td colSpan={6} className="empty-members">Lead data is unavailable.</td></tr>
-                      : filtered.length === 0 ? <tr><td colSpan={6} className="empty-members">{search ? 'No matching leads.' : 'No leads yet. Create your first lead.'}</td></tr>
+                  {isLoading ? <tr><td colSpan={7} className="empty-members">Loading leads...</td></tr>
+                    : error ? <tr><td colSpan={7} className="empty-members">Lead data is unavailable.</td></tr>
+                      : filtered.length === 0 ? <tr><td colSpan={7} className="empty-members">{search ? 'No matching leads.' : 'No leads yet. Create your first lead.'}</td></tr>
                         : filtered.map(lead => (
                           <tr key={lead.id}>
-                            <td><strong>{lead.firstName} {lead.lastName}</strong></td><td>{lead.phoneNumber}</td><td>{lead.email}</td><td>{lead.state}</td><td>{formatDate(lead.createdOn)}</td>
+                            <td><strong>{lead.firstName} {lead.lastName}</strong></td><td>{lead.phoneNumber}</td><td>{lead.email}</td><td>{lead.state}</td><td>{lead.statusName}</td><td>{formatDate(lead.createdOn)}</td>
                             <td className="user-row-actions">
                               <button className="row-menu" aria-label={`View lead ${lead.id}`} onClick={() => setDetails(lead)}><Eye size={16} /></button>
                               <button className="row-menu" aria-label={`Edit lead ${lead.id}`} onClick={() => openEditor(lead)}><Pencil size={16} /></button>
@@ -166,32 +188,43 @@ function LeadsPage() {
           </section>
         </div>
       </main>
-      <dialog ref={dialogRef} className="user-modal lead-dialog" aria-labelledby="lead-dialog-title" onCancel={event => { event.preventDefault(); closeModal() }}>
+      <dialog ref={dialogRef} className="user-modal lead-dialog" aria-labelledby="lead-dialog-title" onCancel={event => { event.preventDefault(); requestClose() }}>
         <div className="user-modal-heading">
           <h2 id="lead-dialog-title">{editor ? editor.lead ? 'Edit lead' : 'Create lead' : deleting ? 'Delete lead' : 'Lead details'}</h2>
-          <button className="icon-button" aria-label="Close dialog" disabled={isSaving} onClick={closeModal}><X size={20} /></button>
+          <button className="icon-button" aria-label="Close dialog" disabled={isSaving} onClick={requestClose}><X size={20} /></button>
         </div>
         {formError && <p className="users-error" role="alert">{formError}</p>}
         {editor && (
-          <form onSubmit={save}>
+          <form onSubmit={submitForm}>
             {leadGroups.map(group => <fieldset className="lead-fieldset" key={group}><legend>{group}</legend>
               <div className="lead-fields">{leadFields.filter(field => field.group === group).map(field => (
                 <label key={field.name}><span>{field.label}{field.required ? ' *' : ''}</span>
-                  <input name={field.name} type={field.type ?? 'text'} required={field.required} maxLength={field.type === 'date' ? undefined : field.maxLength ?? 50}
-                    value={values[field.name]} disabled={isSaving} onChange={event => setValues(current => ({ ...current, [field.name]: event.target.value }))} />
+                  {field.type === 'status' ? <select name={field.name} required value={values.statusId} disabled={isSaving} onChange={event => setValues(current => ({ ...current, statusId: event.target.value }))}>
+                    <option value="">Select a status</option>
+                    {statuses.map(status => <option key={status.id} value={status.id}>{status.name}</option>)}
+                  </select> : <input name={field.name} type={field.type ?? 'text'} required={field.required} maxLength={field.type === 'date' ? undefined : field.maxLength ?? 50}
+                    value={values[field.name]} disabled={isSaving} onChange={event => setValues(current => ({ ...current, [field.name]: event.target.value }))} />}
                 </label>
               ))}</div>
             </fieldset>)}
-            <div className="user-modal-actions"><button type="button" className="user-cancel-button" disabled={isSaving} onClick={closeModal}>Cancel</button><button className="primary-button" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save lead'}</button></div>
+            <div className="user-modal-actions"><button type="button" className="user-cancel-button" disabled={isSaving} onClick={requestClose}>Cancel</button><button className="primary-button" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save lead'}</button></div>
           </form>
         )}
         {details && <div className="lead-details">
           <p>Lead #{details.id} · Created {formatDate(details.createdOn)}</p>
-          {leadGroups.map(group => <section key={group}><h3>{group}</h3><dl>{leadFields.filter(field => field.group === group).map(field => <div key={field.name}><dt>{field.label}</dt><dd>{details[field.name] || 'Not provided'}</dd></div>)}</dl></section>)}
+          {leadGroups.map(group => <section key={group}><h3>{group}</h3><dl>{leadFields.filter(field => field.group === group).map(field => <div key={field.name}><dt>{field.label}</dt><dd>{field.type === 'status' ? details.statusName : details[field.name as keyof Lead] || 'Not provided'}</dd></div>)}</dl></section>)}
         </div>}
         {deleting && <div><p className="user-modal-description">Permanently delete the lead for <strong>{deleting.firstName} {deleting.lastName}</strong>? This cannot be undone.</p>
           <div className="user-modal-actions"><button className="user-cancel-button" disabled={isSaving} onClick={closeModal}>Cancel</button><button className="primary-button lead-delete-button" disabled={isSaving} onClick={() => void deleteLead()}>{isSaving ? 'Deleting...' : 'Delete permanently'}</button></div>
         </div>}
+      </dialog>
+      <dialog ref={confirmRef} className="user-modal confirm-dialog" aria-labelledby="confirm-title" onCancel={event => { event.preventDefault(); setConfirm(null) }}>
+        <h2 id="confirm-title">{confirm === 'save' ? (editor?.lead ? 'Save changes?' : 'Create this lead?') : 'Discard changes?'}</h2>
+        <p className="user-modal-description">{confirm === 'save' ? 'Please confirm that you want to save this lead.' : 'Your unsaved changes will be lost.'}</p>
+        <div className="user-modal-actions">
+          <button type="button" className="user-cancel-button" onClick={() => setConfirm(null)}>{confirm === 'save' ? 'Go back' : 'Keep editing'}</button>
+          <button type="button" className={confirm === 'save' ? 'primary-button' : 'primary-button lead-delete-button'} onClick={() => { if (confirm === 'save') void save(); else { setConfirm(null); closeModal() } }}>{confirm === 'save' ? 'Yes, save' : 'Yes, discard'}</button>
+        </div>
       </dialog>
     </div>
   )

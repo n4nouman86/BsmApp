@@ -10,7 +10,8 @@
 - `Bsm.WebUI/` is a React + TypeScript application built with Vite.
 - The Web UI calls the API at `http://localhost:5049/api` by default. Configure `VITE_API_URL` when the API has a different URL.
 - Admin user-management endpoints are protected by the `Admin` role.
-- Leads map the existing `dbo.Leads` table. Signed-in users manage their own leads; Admin can manage all leads. New leads belong to their creator, and deletion is permanent after confirmation.
+- Leads map the existing `dbo.Leads` table. Signed-in users manage their own leads; Admin can manage all leads. New leads belong to their creator, and deletion is permanent after confirmation. Every lead has a required `StatusId` FK to `dbo.LeadStatuses`.
+- Lead statuses map `dbo.LeadStatuses` (`/api/leadstatuses`): everyone can read; only Admin can create, edit or delete. Deleting a status that leads still use returns 409.
 
 ## Feature structure
 

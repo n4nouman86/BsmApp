@@ -12,6 +12,10 @@ including records without an owner. Inaccessible IDs return 404. Creating a lead
 always assigns the authenticated user's ID; neither owner nor creation timestamp
 can be supplied or changed by the client.
 
+Every lead requires a `statusId` that references `dbo.LeadStatuses` (foreign key,
+not null). Unknown status IDs return 400, responses include `statusId` and
+`statusName`, and deleting a status that leads still use returns 409.
+
 The Web UI at `/leads` includes searchable listings, full details, create/edit
 forms, and permanent-delete confirmation. Non-admin users land on Leads rather
 than the administrator-only user overview.
@@ -23,5 +27,5 @@ Location header, PUT returns 200, and DELETE returns 204. Invalid input returns
 With the local API running and `DevelopmentAdmin` configured, run
 `node --test tests\leads.integration.mjs` from the repository root. This checks
 CRUD, field limits, nullable fields, server-assigned ownership/timestamps, and
-cross-user isolation against the real table. It creates two temporary users and
-synthetic leads, then deletes only those test records in a cleanup block.
+cross-user isolation against the real table. It creates two temporary users, two
+temporary statuses and synthetic leads, then deletes only those test records in a cleanup block.

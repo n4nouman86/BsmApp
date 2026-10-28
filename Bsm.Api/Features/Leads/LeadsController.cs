@@ -41,6 +41,7 @@ public sealed class LeadsController(ILeadService service) : ApiControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
+        if (!await service.StatusExistsAsync(request.StatusId!.Value, cancellationToken)) return InvalidStatus();
         var lead = await service.CreateAsync(request, userId, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = lead.Id }, lead);
     }
@@ -55,6 +56,7 @@ public sealed class LeadsController(ILeadService service) : ApiControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
+        if (!await service.StatusExistsAsync(request.StatusId!.Value, cancellationToken)) return InvalidStatus();
         var lead = await service.UpdateAsync(id, request, userId, User.IsInRole("Admin"), cancellationToken);
         return lead is null ? NotFound() : Ok(lead);
     }
@@ -71,4 +73,10 @@ public sealed class LeadsController(ILeadService service) : ApiControllerBase
         return await service.DeleteAsync(id, userId, User.IsInRole("Admin"), cancellationToken)
             ? NoContent() : NotFound();
     }
+
+    private BadRequestObjectResult InvalidStatus() =>
+        BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>
+        {
+            [nameof(SaveLeadRequest.StatusId)] = ["The selected status does not exist."],
+        }));
 }

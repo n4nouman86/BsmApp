@@ -1,9 +1,9 @@
-import { LayoutDashboard, LogOut, Sparkles, Users, X } from 'lucide-react'
+import { Contact, LayoutDashboard, LogOut, Sparkles, Users, X } from 'lucide-react'
 import { getCurrentUser } from '../session'
 
 type AppSidebarProps = {
-  activePage: 'overview' | 'users'
-  usersCount: number
+  activePage: 'overview' | 'users' | 'leads'
+  usersCount?: number
   isLoading: boolean
   isOpen: boolean
   onClose: () => void
@@ -26,18 +26,21 @@ function AppSidebar({ activePage, usersCount, isLoading, isOpen, onClose }: AppS
       <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
         <div className="brand-row">
           <div className="brand-mark"><Sparkles size={17} strokeWidth={2.5} /></div>
-          <span className="brand-name">bsmjoin</span>
+          <span className="brand-name">bsm</span>
           <button className="icon-button sidebar-close" onClick={onClose} aria-label="Close navigation"><X size={18} /></button>
         </div>
         <nav className="main-nav" aria-label="Main navigation">
           <span className="nav-label">Workspace</span>
-          <a className={`nav-item ${activePage === 'overview' ? 'nav-item-active' : ''}`} href="/">
+          {user?.roles.includes('Admin') && <a className={`nav-item ${activePage === 'overview' ? 'nav-item-active' : ''}`} href="/">
             <LayoutDashboard size={18} strokeWidth={1.8} /><span>Overview</span>
+          </a>}
+          <a className={`nav-item ${activePage === 'leads' ? 'nav-item-active' : ''}`} href="/leads">
+            <Contact size={18} strokeWidth={1.8} /><span>Leads</span>
           </a>
-          <a className={`nav-item ${activePage === 'users' ? 'nav-item-active' : ''}`} href="/users">
+          {user?.roles.includes('Admin') && <a className={`nav-item ${activePage === 'users' ? 'nav-item-active' : ''}`} href="/users">
             <Users size={18} strokeWidth={1.8} /><span>Users</span>
-            {!isLoading && <span className="nav-count">{usersCount}</span>}
-          </a>
+            {!isLoading && usersCount !== undefined && <span className="nav-count">{usersCount}</span>}
+          </a>}
         </nav>
         <div className="sidebar-footer">
           <div className="profile-row">

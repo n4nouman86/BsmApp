@@ -10,6 +10,7 @@
 - `Bsm.WebUI/` is a React + TypeScript application built with Vite.
 - The Web UI calls the API at `http://localhost:5049/api` by default. Configure `VITE_API_URL` when the API has a different URL.
 - Admin user-management endpoints are protected by the `Admin` role.
+- Leads map the existing `dbo.Leads` table. Signed-in users manage their own leads; Admin can manage all leads. New leads belong to their creator, and deletion is permanent after confirmation.
 
 ## Feature structure
 
@@ -31,7 +32,7 @@
 
 - Follow existing patterns: controller-based API endpoints, Identity for user/password operations, and typed React components.
 - Keep user-facing data API-backed; do not add fabricated dashboard, activity, billing, or directory records.
-- Preserve the shared teal styling, Apple system font stack, consistent `MMM d, yyyy` date format, sticky navigation, and responsive behavior.
+- Preserve the shared slate-gray styling with a charcoal sidebar, Apple system font stack, consistent `MMM d, yyyy` date format, sticky navigation, and responsive behavior.
 - Reuse `Bsm.WebUI/src/session.ts` for shared API URL, access token, current-user, and date-format helpers.
-- Keep browser titles descriptive and branded as `... | BsmJoin`.
+- Keep browser titles descriptive and branded as `... | bsm`; use `bsm` for visible UI branding.
 - Validate relevant changes with the smallest applicable build/lint checks.

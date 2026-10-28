@@ -9,7 +9,9 @@ function AdminLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(() => new URLSearchParams(window.location.search).get('session') === 'expired'
+    ? 'Your session has expired. Please sign in again.'
+    : '')
   const [isLoading, setIsLoading] = useState(false)
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -38,11 +40,11 @@ function AdminLoginPage() {
 
   return (
     <main className="auth-page">
-      <section className="auth-art"><div className="auth-brand"><span><Sparkles size={17} /></span> bsmjoin</div><div className="auth-art-content"><p className="eyebrow">One workspace. Everything aligned.</p><h1>Bring your people<br /><em>into focus.</em></h1><p>Manage members, access and activity from one calm, connected workspace.</p></div><div className="auth-art-footer"><span>Secure workspace access</span><span>© 2026 BsmJoin</span></div></section>
+      <section className="auth-art"><div className="auth-brand"><span><Sparkles size={17} /></span> bsm</div><div className="auth-art-content"><p className="eyebrow">One workspace. Everything aligned.</p><h1>Bring your people<br /><em>into focus.</em></h1><p>Manage members, access and activity from one calm, connected workspace.</p></div><div className="auth-art-footer"><span>Secure workspace access</span><span>© 2026 bsm</span></div></section>
       <section className="auth-form-side">
         <div className="auth-form-wrap">
-          <div className="mobile-auth-brand"><span><Sparkles size={16} /></span> bsmjoin</div>
-          <div className="auth-heading"><p className="eyebrow">Admin workspace</p><h2>Welcome back</h2><p>Sign in to manage your BsmJoin workspace.</p></div>
+          <div className="mobile-auth-brand"><span><Sparkles size={16} /></span> bsm</div>
+          <div className="auth-heading"><p className="eyebrow">Workspace access</p><h2>Welcome back</h2><p>Sign in to manage your bsm workspace.</p></div>
           {isDevelopment && (
             <aside className="auth-demo" aria-label="Development demo credentials">
               <strong>Local development login</strong>
@@ -70,7 +72,7 @@ function AdminLoginPage() {
             {error && <div className="auth-error" role="alert">{error}</div>}
             <button className="auth-submit" type="submit" disabled={isLoading}>{isLoading ? 'Signing in...' : 'Sign in'}{!isLoading && <ArrowRight size={17} />}</button>
           </form>
-          <p className="auth-switch">Only administrators can create and manage user accounts.</p>
+          <p className="auth-switch">Manage your leads. Administrators can also manage user accounts.</p>
         </div>
       </section>
     </main>

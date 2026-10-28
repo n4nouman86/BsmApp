@@ -28,6 +28,19 @@ export function getAccessToken() {
   return localStorage.getItem('bsmjoin_token') ?? ''
 }
 
+export async function authenticatedFetch(input: RequestInfo | URL, init?: RequestInit) {
+  const response = await fetch(input, init)
+  if (response.status === 401) {
+    localStorage.removeItem('bsmjoin_token')
+    localStorage.removeItem('bsmjoin_user')
+    sessionStorage.removeItem('sidebar-open')
+    window.location.replace('/login?session=expired')
+    throw new Error('Your session has expired. Please sign in again.')
+  }
+
+  return response
+}
+
 export function getCurrentUser(): AppUser | null {
   const storedUser = localStorage.getItem('bsmjoin_user')
   if (!storedUser) return null

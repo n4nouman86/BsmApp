@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ArrowUpRight, Check, CheckCircle2, Edit2, Eye, EyeOff, KeyRound, Menu, Plus, Search, Users, X } from 'lucide-react'
-import { apiUrl, formatDate, getAccessToken, getCurrentUser } from '../../session'
+import { apiUrl, authenticatedFetch, formatDate, getAccessToken, getCurrentUser } from '../../session'
 import type { DirectoryUser } from '../../session'
 import AppSidebar from '../../Shared/AppSidebar'
 
@@ -63,7 +63,7 @@ function UsersPage() {
   useEffect(() => {
     const loadMembers = async () => {
       try {
-        const response = await fetch(`${apiUrl}/users`, {
+        const response = await authenticatedFetch(`${apiUrl}/users`, {
           headers: { Authorization: `Bearer ${getAccessToken()}` },
         })
         if (!response.ok) {
@@ -131,7 +131,7 @@ function UsersPage() {
     setIsSaving(true)
 
     try {
-      const response = await fetch(`${apiUrl}/users`, {
+      const response = await authenticatedFetch(`${apiUrl}/users`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${getAccessToken()}`,
@@ -167,7 +167,7 @@ function UsersPage() {
     setPasswordError('')
     setIsChangingPassword(true)
     try {
-      const response = await fetch(`${apiUrl}/users/${encodeURIComponent(passwordUser.id)}/password`, {
+      const response = await authenticatedFetch(`${apiUrl}/users/${encodeURIComponent(passwordUser.id)}/password`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${getAccessToken()}`,
@@ -194,7 +194,7 @@ function UsersPage() {
     setEditError('')
     setIsSavingEdit(true)
     try {
-      const response = await fetch(`${apiUrl}/users/${encodeURIComponent(editingUser.id)}`, {
+      const response = await authenticatedFetch(`${apiUrl}/users/${encodeURIComponent(editingUser.id)}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${getAccessToken()}`,

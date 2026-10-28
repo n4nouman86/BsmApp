@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowUpRight, Menu, Plus, Sparkles, Users } from 'lucide-react'
 import AppSidebar from '../../Shared/AppSidebar'
-import { apiUrl, formatDate, getAccessToken, getCurrentUser } from '../../session'
+import { apiUrl, authenticatedFetch, formatDate, getAccessToken, getCurrentUser } from '../../session'
 import type { DirectoryUser } from '../../session'
 
 type ApiError = {
@@ -26,7 +26,7 @@ function OverviewPage() {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const response = await fetch(`${apiUrl}/users`, {
+        const response = await authenticatedFetch(`${apiUrl}/users`, {
           headers: { Authorization: `Bearer ${getAccessToken()}` },
         })
         if (!response.ok) {

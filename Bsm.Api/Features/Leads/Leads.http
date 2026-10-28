@@ -1,0 +1,81 @@
+@baseUrl = http://localhost:5049
+@token = replace-with-a-valid-access-token
+@leadId = 1
+
+### List visible leads (owner only; administrators see all)
+GET {{baseUrl}}/api/leads
+Authorization: Bearer {{token}}
+
+### Read an accessible lead
+GET {{baseUrl}}/api/leads/{{leadId}}
+Authorization: Bearer {{token}}
+
+### Create (AppUserId and CreatedOn are assigned server-side)
+POST {{baseUrl}}/api/leads
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "phoneNumber": "555-0100",
+  "firstName": "Sample",
+  "lastName": "Lead",
+  "email": "sample@example.test",
+  "dateOfBirth": "1990-05-20",
+  "streetAddress": "100 Example Street",
+  "city": "Austin",
+  "state": "TX",
+  "postalCode": "78701",
+  "haveSpouse": "No",
+  "spouseName": null,
+  "spouseDateOfBirth": null,
+  "currentAutoCarrier": "Example carrier",
+  "anyLaspse": "No",
+  "makeAndModel": "Example sedan",
+  "accidents": "None",
+  "tikets": "None",
+  "homeOwner": "No",
+  "hopeType": null,
+  "haveHomeClaims": null,
+  "currentHomeCarrier": null,
+  "anyClaimInPast3Years": null
+}
+
+### Update (ownership and creation time are preserved)
+PUT {{baseUrl}}/api/leads/{{leadId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "phoneNumber": "555-0101",
+  "firstName": "Updated",
+  "lastName": "Lead",
+  "email": "sample@example.test",
+  "dateOfBirth": "1990-05-20",
+  "streetAddress": "100 Example Street",
+  "state": "TX",
+  "haveSpouse": "No",
+  "currentAutoCarrier": "Example carrier",
+  "anyLaspse": "No",
+  "makeAndModel": "Example sedan",
+  "accidents": "None",
+  "tikets": "None",
+  "homeOwner": "No"
+}
+
+### Permanently delete
+DELETE {{baseUrl}}/api/leads/{{leadId}}
+Authorization: Bearer {{token}}
+
+### Validation failure (400)
+POST {{baseUrl}}/api/leads
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Missing or inaccessible lead (404; other owners receive the same response)
+GET {{baseUrl}}/api/leads/2147483647
+Authorization: Bearer {{token}}
+
+### Authentication required (401)
+GET {{baseUrl}}/api/leads

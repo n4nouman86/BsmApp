@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Eye, Menu, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import AppSidebar from '../../Shared/AppSidebar'
@@ -31,6 +31,7 @@ function LeadsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [submittedSearch, setSubmittedSearch] = useState('')
   const [reload, setReload] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [editor, setEditor] = useState<{ lead?: Lead } | null>(null)
@@ -60,31 +61,36 @@ function LeadsPage() {
   }, [confirm])
 
   useEffect(() => {
-    let active = true
+    const controller = new AbortController()
     const load = async () => {
+      setIsLoading(true)
+      setError('')
       try {
+        const query = submittedSearch ? `?${new URLSearchParams({ search: submittedSearch })}` : ''
         const [response, statusResponse] = await Promise.all([
-          authenticatedFetch(`${apiUrl}/leads`, { headers: { Authorization: `Bearer ${getAccessToken()}` } }),
-          authenticatedFetch(`${apiUrl}/leadstatuses`, { headers: { Authorization: `Bearer ${getAccessToken()}` } }),
+          authenticatedFetch(`${apiUrl}/leads${query}`, { signal: controller.signal, headers: { Authorization: `Bearer ${getAccessToken()}` } }),
+          authenticatedFetch(`${apiUrl}/leadstatuses`, { signal: controller.signal, headers: { Authorization: `Bearer ${getAccessToken()}` } }),
         ])
         if (!response.ok) throw new Error(await responseError(response, 'Unable to load leads.'))
         if (!statusResponse.ok) throw new Error(await responseError(statusResponse, 'Unable to load lead statuses.'))
         const data: Lead[] = await response.json()
         const statusData: { id: number; name: string }[] = await statusResponse.json()
-        if (active) { setLeads(data); setStatuses(statusData) }
+        if (!controller.signal.aborted) { setLeads(data); setStatuses(statusData) }
       } catch (loadError) {
-        if (active) setError(loadError instanceof Error ? loadError.message : 'Unable to load leads.')
+        if (!controller.signal.aborted) setError(loadError instanceof Error ? loadError.message : 'Unable to load leads.')
       } finally {
-        if (active) setIsLoading(false)
+        if (!controller.signal.aborted) setIsLoading(false)
       }
     }
     void load()
-    return () => { active = false }
-  }, [reload])
+    return () => controller.abort()
+  }, [reload, submittedSearch])
 
-  const filtered = useMemo(() => leads.filter(lead =>
-    `${lead.firstName} ${lead.lastName} ${lead.email} ${lead.phoneNumber} ${lead.city ?? ''} ${lead.state} ${lead.statusName}`
-      .toLowerCase().includes(search.toLowerCase())), [leads, search])
+  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSubmittedSearch(search.trim())
+    setReload(current => current + 1)
+  }
 
   const openEditor = (lead?: Lead) => {
     setValues(leadValues(lead))
@@ -170,6 +176,7 @@ function LeadsPage() {
       if (!response.ok) throw new Error(await responseError(response, 'Unable to save this lead.'))
       const saved: Lead = await response.json()
       setLeads(current => editing ? current.map(lead => lead.id === saved.id ? saved : lead) : [saved, ...current])
+      setReload(current => current + 1)
       setEditor(null)
       showToast(editing ? 'Lead updated.' : 'Lead created.')
     } catch (saveError) {
@@ -189,6 +196,7 @@ function LeadsPage() {
       })
       if (!response.ok) throw new Error(await responseError(response, 'Unable to delete this lead.'))
       setLeads(current => current.filter(lead => lead.id !== deleting.id))
+      setReload(current => current + 1)
       setDeleting(null)
       showToast('Lead deleted.')
     } catch (deleteError) {
@@ -214,8 +222,8 @@ function LeadsPage() {
           {error && <div className="users-error" role="alert">{error} <button type="button" onClick={() => { setError(''); setIsLoading(true); setReload(value => value + 1) }}>Retry</button></div>}
           <section className="panel members-directory">
             <div className="directory-toolbar">
-              <div><p className="panel-kicker">Lead directory</p><h2>{isAdmin ? 'All leads' : 'My leads'}{!isLoading && !error && <span>{leads.length} total</span>}</h2></div>
-              <label className="directory-search"><Search size={16} /><input aria-label="Search leads" placeholder="Search leads..." value={search} onChange={event => setSearch(event.target.value)} /></label>
+              <div><p className="panel-kicker">Lead directory</p><h2>{isAdmin ? 'All leads' : 'My leads'}{!isLoading && !error && <span>{leads.length} {submittedSearch ? 'found' : 'total'}</span>}</h2></div>
+              <form className="directory-search" role="search" onSubmit={submitSearch}><Search size={16} /><input aria-label="Search leads" placeholder="Search leads..." value={search} onChange={event => setSearch(event.target.value)} /></form>
             </div>
             <div className="member-table-wrap">
               <table>
@@ -223,8 +231,8 @@ function LeadsPage() {
                 <tbody>
                   {isLoading ? <tr><td colSpan={7} className="empty-members">Loading leads...</td></tr>
                     : error ? <tr><td colSpan={7} className="empty-members">Lead data is unavailable.</td></tr>
-                      : filtered.length === 0 ? <tr><td colSpan={7} className="empty-members">{search ? 'No matching leads.' : 'No leads yet. Add your first lead.'}</td></tr>
-                        : filtered.map(lead => (
+                      : leads.length === 0 ? <tr><td colSpan={7} className="empty-members">{submittedSearch ? 'No matching leads.' : 'No leads yet. Add your first lead.'}</td></tr>
+                        : leads.map(lead => (
                           <tr key={lead.id}>
                             <td><strong>{lead.firstName} {lead.lastName}</strong></td><td>{lead.phoneNumber}</td><td>{lead.email}</td><td>{lead.state}</td><td>{lead.statusName}</td><td>{formatDate(lead.createdOn)}</td>
                             <td className="user-row-actions">

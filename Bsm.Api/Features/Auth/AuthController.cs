@@ -19,7 +19,7 @@ public sealed class AuthController(
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
-        if (user is null || (!environment.IsDevelopment()
+        if (user is null || user.IsBlocked || (!environment.IsDevelopment()
             && string.Equals(user.Email, "demo@bsmjoin.test", StringComparison.OrdinalIgnoreCase)))
         {
             return Unauthorized(new { message = "Invalid email or password." });

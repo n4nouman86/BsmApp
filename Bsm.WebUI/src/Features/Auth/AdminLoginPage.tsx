@@ -3,7 +3,6 @@ import type { FormEvent } from 'react'
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Sparkles } from 'lucide-react'
 
 const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:5049/api'
-const isDevelopment = import.meta.env.DEV
 
 function AdminLoginPage() {
   const [email, setEmail] = useState('')
@@ -45,14 +44,6 @@ function AdminLoginPage() {
         <div className="auth-form-wrap">
           <div className="mobile-auth-brand"><span><Sparkles size={16} /></span> BSM</div>
           <div className="auth-heading"><p className="eyebrow">Workspace access</p><h2>Welcome back</h2><p>Sign in to manage your BSM workspace.</p></div>
-          {isDevelopment && (
-            <aside className="auth-demo" aria-label="Development demo credentials">
-              <strong>Local development login</strong>
-              <span>Email: <code>demo@bsmjoin.test</code></span>
-              <span>Password: <code>Demo@12345</code></span>
-              <span>For local testing only. Not available in production.</span>
-            </aside>
-          )}
           <form onSubmit={submit}>
             <label>
               <span>Email address</span>

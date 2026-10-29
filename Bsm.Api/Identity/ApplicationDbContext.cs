@@ -18,6 +18,13 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        builder.Entity<ApplicationUser>().Property(user => user.FirstName).HasMaxLength(50);
+        builder.Entity<ApplicationUser>().Property(user => user.LastName).HasMaxLength(50);
+        builder.Entity<ApplicationUser>().Property(user => user.CreatedOn)
+            .HasConversion(
+                value => value.UtcDateTime,
+                value => new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc)))
+            .HasColumnType("datetime2(7)");
         builder.ApplyConfiguration(new LeadConfiguration());
         builder.ApplyConfiguration(new LeadStatusConfiguration());
         builder.ApplyConfiguration(new DncNumberConfiguration());

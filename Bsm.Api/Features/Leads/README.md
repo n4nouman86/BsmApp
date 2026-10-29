@@ -20,6 +20,11 @@ The Web UI at `/leads` includes searchable listings, full details, create/edit
 forms, and permanent-delete confirmation. Non-admin users land on Leads rather
 than the administrator-only user overview.
 
+Search submits only on Enter via `GET /api/leads?search=...`. It matches full
+name, email, phone, city, state or status within the user's visible leads.
+Clearing the input and pressing Enter restores all visible leads. Typing alone
+does not filter results or send requests.
+
 Use [Leads.http](./Leads.http) for request examples. POST returns 201 and a
 Location header, PUT returns 200, and DELETE returns 204. Invalid input returns
 400 with validation details. Authentication failures return 401.

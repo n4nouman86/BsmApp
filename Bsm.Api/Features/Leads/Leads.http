@@ -2,6 +2,10 @@
 @token = replace-with-a-valid-access-token
 @leadId = 1
 
+### Search visible leads by name, email, phone, city, state or status
+GET {{baseUrl}}/api/leads?search=Austin
+Authorization: Bearer {{token}}
+
 ### List visible leads (owner only; administrators see all)
 GET {{baseUrl}}/api/leads
 Authorization: Bearer {{token}}

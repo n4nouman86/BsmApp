@@ -4,18 +4,31 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Bsm.Api.Features.Users;
 
 [Authorize(Roles = "Admin")]
-public sealed class UsersController(UserManager<ApplicationUser> userManager) : ApiControllerBase
+public sealed class UsersController(
+    UserManager<ApplicationUser> userManager,
+    ApplicationDbContext dbContext,
+    IUserBlockingService blockingService) : ApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<UserResponse>>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<UserResponse>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<UserResponse>>> GetAll(
+        CancellationToken cancellationToken, [FromQuery] string? search = null)
     {
-        var users = await userManager.Users
-            .AsNoTracking()
+        var query = userManager.Users.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(user =>
+                (user.FirstName + " " + user.LastName).Contains(term)
+                || (user.Email != null && user.Email.Contains(term)));
+        }
+
+        var users = await query
             .OrderBy(user => user.LastName)
             .ThenBy(user => user.FirstName)
             .Select(user => new
@@ -26,8 +39,19 @@ public sealed class UsersController(UserManager<ApplicationUser> userManager) : 
                 user.FirstName,
                 user.LastName,
                 user.CreatedOn,
+                user.IsBlocked,
             })
             .ToListAsync(cancellationToken);
+
+        var rolesByUser = await dbContext.UserRoles
+            .Join(dbContext.Roles, userRole => userRole.RoleId, role => role.Id,
+                (userRole, role) => new { userRole.UserId, Role = role.Name })
+            .ToListAsync(cancellationToken);
+        var roleNamesByUser = rolesByUser
+            .GroupBy(userRole => userRole.UserId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<string>)group.Select(userRole => userRole.Role!).ToArray());
 
         return Ok(users.Select(user => new UserResponse(
             user.Id,
@@ -35,7 +59,9 @@ public sealed class UsersController(UserManager<ApplicationUser> userManager) : 
             user.Email,
             user.FirstName,
             user.LastName,
-            user.CreatedOn)).ToArray());
+            user.CreatedOn,
+            roleNamesByUser.GetValueOrDefault(user.Id, Array.Empty<string>()),
+            user.IsBlocked)).ToArray());
     }
 
     [HttpGet("{id}")]
@@ -47,15 +73,21 @@ public sealed class UsersController(UserManager<ApplicationUser> userManager) : 
             .AsNoTracking()
             .SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
 
-        return user is null ? NotFound() : Ok(ToResponse(user));
+        return user is null ? NotFound() : Ok(await ToResponse(user));
     }
 
     [HttpPost]
     [ProducesResponseType<UserResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<UserResponse>> Create(CreateUserRequest request)
+    public async Task<ActionResult<UserResponse>> Create(CreateUserRequest request, CancellationToken cancellationToken)
     {
+        if (request.IsAdmin && request.IsVerifier)
+        {
+            return BadRequest(new { message = "Select only one role: Verifier or Admin." });
+        }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var user = new ApplicationUser
         {
             UserName = request.Email,
@@ -70,7 +102,20 @@ public sealed class UsersController(UserManager<ApplicationUser> userManager) : 
             return IdentityErrors(result);
         }
 
-        return CreatedAtAction(nameof(GetById), new { id = user.Id }, ToResponse(user));
+        var roles = new List<string>();
+        if (request.IsVerifier) roles.Add("Verifier");
+        if (request.IsAdmin) roles.Add("Admin");
+        if (roles.Count > 0)
+        {
+            var roleResult = await userManager.AddToRolesAsync(user, roles);
+            if (!roleResult.Succeeded)
+            {
+                return IdentityErrors(roleResult);
+            }
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = user.Id }, await ToResponse(user));
     }
 
     [HttpPut("{id}")]
@@ -78,12 +123,24 @@ public sealed class UsersController(UserManager<ApplicationUser> userManager) : 
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<UserResponse>> Update(string id, UpdateUserRequest request)
+    public async Task<ActionResult<UserResponse>> Update(
+        string id,
+        UpdateUserRequest request,
+        CancellationToken cancellationToken)
     {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var user = await userManager.FindByIdAsync(id);
         if (user is null)
         {
             return NotFound();
+        }
+
+        var currentRoles = await userManager.GetRolesAsync(user);
+        var isAdmin = request.IsAdmin ?? currentRoles.Contains("Admin");
+        var isVerifier = request.IsVerifier ?? currentRoles.Contains("Verifier");
+        if (isAdmin && isVerifier)
+        {
+            return BadRequest(new { message = "Select only one role: Verifier or Admin." });
         }
 
         user.FirstName = request.FirstName;
@@ -102,9 +159,54 @@ public sealed class UsersController(UserManager<ApplicationUser> userManager) : 
         }
 
         var updateResult = await userManager.UpdateAsync(user);
-        return updateResult.Succeeded
-            ? Ok(ToResponse(user))
-            : IdentityErrors(updateResult);
+        if (!updateResult.Succeeded)
+        {
+            return IdentityErrors(updateResult);
+        }
+
+        foreach (var (role, requested) in new[] { ("Verifier", request.IsVerifier), ("Admin", request.IsAdmin) })
+        {
+            if (requested is not bool enabled) continue;
+
+            var hasRole = await userManager.IsInRoleAsync(user, role);
+            if (enabled != hasRole)
+            {
+                var roleResult = enabled
+                    ? await userManager.AddToRoleAsync(user, role)
+                    : await userManager.RemoveFromRoleAsync(user, role);
+                if (!roleResult.Succeeded)
+                {
+                    return IdentityErrors(roleResult);
+                }
+            }
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return Ok(await ToResponse(user));
+    }
+
+    /// <summary>Blocks or unblocks a user. Blocking revokes all current sessions.</summary>
+    [HttpPut("{id}/blocked")]
+    [ProducesResponseType<UserResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<UserResponse>> SetBlocked(
+        string id, SetUserBlockedRequest request, CancellationToken cancellationToken)
+    {
+        var actingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (actingUserId is null) return Unauthorized();
+
+        var outcome = await blockingService.SetBlockedAsync(
+            id, actingUserId, request.IsBlocked, cancellationToken);
+        return outcome switch
+        {
+            UserBlockOutcome.Applied => await GetById(id, cancellationToken),
+            UserBlockOutcome.NotFound => NotFound(),
+            UserBlockOutcome.SelfBlock => Conflict(new { message = "You cannot block your own account." }),
+            UserBlockOutcome.LastActiveAdmin => Conflict(new { message = "The last active Admin cannot be blocked." }),
+            _ => Conflict(new { message = "Unable to update this user. Reload and try again." }),
+        };
     }
 
     [HttpPost("{id}/password")]
@@ -154,6 +256,14 @@ public sealed class UsersController(UserManager<ApplicationUser> userManager) : 
             : BadRequest(new { errors });
     }
 
-    private static UserResponse ToResponse(ApplicationUser user) =>
-        new(user.Id, user.UserName, user.Email, user.FirstName, user.LastName, user.CreatedOn);
+    private async Task<UserResponse> ToResponse(ApplicationUser user) =>
+        new(
+            user.Id,
+            user.UserName,
+            user.Email,
+            user.FirstName,
+            user.LastName,
+            user.CreatedOn,
+            (await userManager.GetRolesAsync(user)).ToArray(),
+            user.IsBlocked);
 }

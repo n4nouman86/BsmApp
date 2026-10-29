@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { ArrowUpRight, Check, CheckCircle2, Edit2, Eye, EyeOff, KeyRound, Menu, Plus, Search, Users, X } from 'lucide-react'
-import { apiUrl, authenticatedFetch, formatDate, getAccessToken } from '../../session'
+import { ArrowUpRight, Ban, Check, CheckCircle2, Edit2, Eye, EyeOff, KeyRound, Menu, Plus, Search, ShieldCheck, Users, X } from 'lucide-react'
+import { apiUrl, authenticatedFetch, formatDate, getAccessToken, getCurrentUser } from '../../session'
 import type { DirectoryUser } from '../../session'
 import AppSidebar from '../../Shared/AppSidebar'
 import { toggleNavigation } from '../../Shared/sidebarToggle'
@@ -18,6 +18,9 @@ function getErrorMessage(error: ApiError, fallback: string) {
 function UsersPage() {
   const [members, setMembers] = useState<DirectoryUser[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [searchRequest, setSearchRequest] = useState({ term: '', revision: 0 })
+  const [searchResults, setSearchResults] = useState<DirectoryUser[] | null>(null)
+  const [appliedSearch, setAppliedSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -27,6 +30,7 @@ function UsersPage() {
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [role, setRole] = useState<'Verifier' | 'Admin'>('Verifier')
   const [showInitialPassword, setShowInitialPassword] = useState(false)
   const [passwordUser, setPasswordUser] = useState<DirectoryUser | null>(null)
   const [newPassword, setNewPassword] = useState('')
@@ -38,9 +42,14 @@ function UsersPage() {
   const [editingUser, setEditingUser] = useState<DirectoryUser | null>(null)
   const [editFirstName, setEditFirstName] = useState('')
   const [editLastName, setEditLastName] = useState('')
+  const [editRole, setEditRole] = useState<'Verifier' | 'Admin' | null>(null)
   const [editError, setEditError] = useState('')
   const [isSavingEdit, setIsSavingEdit] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [blockingUser, setBlockingUser] = useState<DirectoryUser | null>(null)
+  const [blockError, setBlockError] = useState('')
+  const [isUpdatingBlock, setIsUpdatingBlock] = useState(false)
+  const currentUserId = getCurrentUser()?.id
   const [sidebarOpen, setSidebarOpen] = useState(() => sessionStorage.getItem('sidebar-open') === 'true')
   const closeSidebar = () => {
     setSidebarOpen(false)
@@ -58,31 +67,49 @@ function UsersPage() {
   }, [toastMessage])
 
   useEffect(() => {
+    const controller = new AbortController()
     const loadMembers = async () => {
+      setIsLoading(true)
+      setLoadError('')
       try {
-        const response = await authenticatedFetch(`${apiUrl}/users`, {
+        const query = searchRequest.term ? `?${new URLSearchParams({ search: searchRequest.term })}` : ''
+        const response = await authenticatedFetch(`${apiUrl}/users${query}`, {
+          signal: controller.signal,
           headers: { Authorization: `Bearer ${getAccessToken()}` },
         })
         if (!response.ok) {
           const error: ApiError = await response.json()
           throw new Error(getErrorMessage(error, 'Unable to load users.'))
         }
-        setMembers(await response.json() as DirectoryUser[])
+        const users: DirectoryUser[] = await response.json()
+        if (controller.signal.aborted) return
+        if (searchRequest.term) {
+          setSearchResults(users)
+        } else {
+          setMembers(users)
+          setSearchResults(null)
+        }
+        setAppliedSearch(searchRequest.term)
       } catch (error) {
+        if (controller.signal.aborted) return
         setLoadError(error instanceof Error ? error.message : 'Unable to load users.')
       } finally {
-        setIsLoading(false)
+        if (!controller.signal.aborted) setIsLoading(false)
       }
     }
 
     void loadMembers()
-  }, [])
+    return () => controller.abort()
+  }, [searchRequest])
 
-  const filteredMembers = useMemo(
-    () => members.filter((member) =>
-      `${member.firstName} ${member.lastName} ${member.email ?? ''}`.toLowerCase().includes(searchTerm.toLowerCase())),
-    [members, searchTerm],
-  )
+  const filteredMembers = searchResults ?? members
+  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSearchRequest((current) => ({ term: searchTerm.trim(), revision: current.revision + 1 }))
+  }
+  const refreshSearch = () => {
+    setSearchRequest((current) => ({ ...current, revision: current.revision + 1 }))
+  }
   const membersThisMonth = members.filter((member) => {
     const createdOn = new Date(member.createdOn)
     const now = new Date()
@@ -96,6 +123,7 @@ function UsersPage() {
     setLastName('')
     setEmail('')
     setPassword('')
+    setRole('Verifier')
     setShowInitialPassword(false)
   }
 
@@ -112,6 +140,7 @@ function UsersPage() {
     setEditingUser(member)
     setEditFirstName(member.firstName)
     setEditLastName(member.lastName)
+    setEditRole(member.roles.includes('Admin') ? 'Admin' : member.roles.includes('Verifier') ? 'Verifier' : null)
     setEditError('')
   }
 
@@ -119,6 +148,7 @@ function UsersPage() {
     setEditingUser(null)
     setEditFirstName('')
     setEditLastName('')
+    setEditRole(null)
     setEditError('')
   }
 
@@ -134,7 +164,7 @@ function UsersPage() {
           Authorization: `Bearer ${getAccessToken()}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ firstName, lastName, email, password }),
+        body: JSON.stringify({ firstName, lastName, email, password, isVerifier: role === 'Verifier', isAdmin: role === 'Admin' }),
       })
 
       if (!response.ok) {
@@ -144,6 +174,7 @@ function UsersPage() {
 
       const createdUser: DirectoryUser = await response.json()
       setMembers((current) => [createdUser, ...current])
+      refreshSearch()
       closeCreateForm()
     } catch (error) {
       setCreateError(error instanceof Error ? error.message : 'Unable to create this user.')
@@ -184,7 +215,7 @@ function UsersPage() {
     }
   }
 
-  const updateUserName = async (event: FormEvent<HTMLFormElement>) => {
+  const updateUser = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!editingUser) return
 
@@ -201,6 +232,8 @@ function UsersPage() {
           firstName: editFirstName,
           lastName: editLastName,
           email: editingUser.email,
+          isVerifier: editRole === 'Verifier',
+          isAdmin: editRole === 'Admin',
         }),
       })
       if (!response.ok) {
@@ -210,12 +243,45 @@ function UsersPage() {
 
       const updatedUser: DirectoryUser = await response.json()
       setMembers((current) => current.map((member) => member.id === updatedUser.id ? updatedUser : member))
-      setToastMessage(`Name updated for ${updatedUser.firstName} ${updatedUser.lastName}.`)
+      refreshSearch()
+      setToastMessage(`User updated for ${updatedUser.firstName} ${updatedUser.lastName}.`)
       closeEditForm()
     } catch (error) {
       setEditError(error instanceof Error ? error.message : 'Unable to update this user.')
     } finally {
       setIsSavingEdit(false)
+    }
+  }
+
+  const changeBlockedStatus = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!blockingUser) return
+
+    setBlockError('')
+    setIsUpdatingBlock(true)
+    try {
+      const response = await authenticatedFetch(`${apiUrl}/users/${encodeURIComponent(blockingUser.id)}/blocked`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isBlocked: !blockingUser.isBlocked }),
+      })
+      if (!response.ok) {
+        const error: ApiError = await response.json()
+        throw new Error(getErrorMessage(error, 'Unable to change this user status.'))
+      }
+
+      const updatedUser: DirectoryUser = await response.json()
+      setMembers((current) => current.map((member) => member.id === updatedUser.id ? updatedUser : member))
+      refreshSearch()
+      setToastMessage(`${updatedUser.firstName} ${updatedUser.lastName} ${updatedUser.isBlocked ? 'blocked' : 'unblocked'}.`)
+      setBlockingUser(null)
+    } catch (error) {
+      setBlockError(error instanceof Error ? error.message : 'Unable to change this user status.')
+    } finally {
+      setIsUpdatingBlock(false)
     }
   }
 
@@ -250,28 +316,32 @@ function UsersPage() {
         </section>
         <section className="panel members-directory">
           <div className="directory-toolbar">
-            <div><p className="panel-kicker">All users</p><h2>Workspace directory <span>{members.length} total</span></h2></div>
-            <label className="directory-search">
+            <div><p className="panel-kicker">{appliedSearch ? 'Search results' : 'All users'}</p><h2>Workspace directory <span>{appliedSearch ? `${filteredMembers.length} found` : `${members.length} total`}</span></h2></div>
+            <form className="directory-search" role="search" onSubmit={submitSearch}>
               <Search size={16} />
               <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Search users..." aria-label="Search users" />
-            </label>
+            </form>
           </div>
           {loadError && <div className="users-error" role="alert">{loadError}</div>}
-          <div className="member-table-wrap">
+          <div className="member-table-wrap" aria-busy={isLoading}>
             <table>
-              <thead><tr><th>User</th><th>Email</th><th>Created</th><th>Actions</th></tr></thead>
+              <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
               <tbody>
                 {filteredMembers.map((member) => {
                   const name = `${member.firstName} ${member.lastName}`
                   const initials = `${member.firstName[0] ?? ''}${member.lastName[0] ?? ''}`.toUpperCase()
+                  const roleLabel = member.roles?.length ? member.roles.join(', ') : 'User'
                   return (
                     <tr key={member.id}>
                       <td><div className="member-cell"><div className="member-avatar lilac">{initials}</div><div><strong>{name}</strong></div></div></td>
                       <td>{member.email}</td>
+                      <td><span className="role-cell">{roleLabel}</span></td>
+                      <td><span className={`user-status${member.isBlocked ? ' user-status-blocked' : ''}`}>{member.isBlocked ? 'Blocked' : 'Active'}</span></td>
                       <td>{formatDate(member.createdOn)}</td>
                       <td className="user-row-actions">
-                        <button className="row-menu" aria-label={`Edit name for ${name}`} onClick={() => openEditForm(member)}><Edit2 size={16} /></button>
+                        <button className="row-menu" aria-label={`Edit user ${name}`} onClick={() => openEditForm(member)}><Edit2 size={16} /></button>
                         <button className="row-menu" aria-label={`Change password for ${name}`} onClick={() => { setPasswordError(''); setPasswordUser(member) }}><KeyRound size={16} /></button>
+                        <button className="row-menu" aria-label={`${member.isBlocked ? 'Unblock' : 'Block'} user ${name}`} title={member.id === currentUserId ? 'You cannot block your own account.' : `${member.isBlocked ? 'Unblock' : 'Block'} user`} disabled={member.id === currentUserId} onClick={() => { setBlockError(''); setBlockingUser(member) }}>{member.isBlocked ? <ShieldCheck size={16} /> : <Ban size={16} />}</button>
                       </td>
                     </tr>
                   )
@@ -280,13 +350,35 @@ function UsersPage() {
             </table>
             {isLoading && <div className="empty-members">Loading users...</div>}
             {!isLoading && !loadError && filteredMembers.length === 0 && (
-              <div className="empty-members">{searchTerm ? `No users found for “${searchTerm}”.` : 'No users yet.'}</div>
+              <div className="empty-members">{appliedSearch ? `No users found for “${appliedSearch}”.` : 'No users yet.'}</div>
             )}
           </div>
         </section>
         <footer className="footer-note"><span><a href="/">Back to dashboard <ArrowUpRight size={13} /></a></span></footer>
         </div>
 
+      {blockingUser && (
+        <div className="user-modal-backdrop">
+          <section className="user-modal" role="dialog" aria-modal="true" aria-labelledby="block-user-title">
+            <div className="user-modal-heading">
+              <div><p className="panel-kicker">User access</p><h2 id="block-user-title">{blockingUser.isBlocked ? 'Unblock user' : 'Block user'}</h2></div>
+              <button className="icon-button" type="button" disabled={isUpdatingBlock} onClick={() => setBlockingUser(null)} aria-label="Close form"><X size={19} /></button>
+            </div>
+            <p className="user-modal-description">
+              {blockingUser.isBlocked
+                ? `Allow ${blockingUser.firstName} ${blockingUser.lastName} to sign in again? A fresh login is required; old sessions remain invalid.`
+                : `Block ${blockingUser.firstName} ${blockingUser.lastName}? Login will be disabled and existing sessions will lose access on their next API request.`}
+            </p>
+            <form onSubmit={changeBlockedStatus}>
+              {blockError && <div className="auth-error" role="alert">{blockError}</div>}
+              <div className="user-modal-actions">
+                <button className="user-cancel-button" type="button" disabled={isUpdatingBlock} onClick={() => setBlockingUser(null)}>Cancel</button>
+                <button className="primary-button" type="submit" disabled={isUpdatingBlock}>{isUpdatingBlock ? 'Saving...' : blockingUser.isBlocked ? 'Unblock user' : 'Block user'}</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
       {isCreateOpen && (
         <div className="user-modal-backdrop">
           <section className="user-modal" role="dialog" aria-modal="true" aria-labelledby="create-user-title">
@@ -294,14 +386,18 @@ function UsersPage() {
               <div><p className="panel-kicker">Workspace directory</p><h2 id="create-user-title">Create user</h2></div>
               <button className="icon-button" type="button" onClick={closeCreateForm} aria-label="Close form"><X size={19} /></button>
             </div>
-            <p className="user-modal-description">Create a standard account. The user can sign in with the email and password you set.</p>
+            <p className="user-modal-description">Create an account and select its roles. Admin grants user-management access. The user can sign in with the email and password you set.</p>
             <form onSubmit={createUser}>
               <div className="auth-name-row">
-                <label><span>First name</span><input required maxLength={100} value={firstName} onChange={(event) => setFirstName(event.target.value)} autoFocus /></label>
-                <label><span>Last name</span><input required maxLength={100} value={lastName} onChange={(event) => setLastName(event.target.value)} /></label>
+                <label><span>First name</span><input required maxLength={50} value={firstName} onChange={(event) => setFirstName(event.target.value)} autoFocus /></label>
+                <label><span>Last name</span><input required maxLength={50} value={lastName} onChange={(event) => setLastName(event.target.value)} /></label>
               </div>
               <label><span>Email address</span><input required type="email" maxLength={256} value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-              <label><span>Initial password</span><div className="user-password-field"><input required type={showInitialPassword ? 'text' : 'password'} minLength={8} maxLength={100} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" /><button className="password-toggle" type="button" onClick={() => setShowInitialPassword((visible) => !visible)} aria-label={showInitialPassword ? 'Hide initial password' : 'Show initial password'}>{showInitialPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div></label>
+              <label><span>Initial password</span><div className="user-password-field"><input required type={showInitialPassword ? 'text' : 'password'} minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" /><button className="password-toggle" type="button" onClick={() => setShowInitialPassword((visible) => !visible)} aria-label={showInitialPassword ? 'Hide initial password' : 'Show initial password'}>{showInitialPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div></label>
+              <div className="user-role-options">
+                <label className="user-role-option"><input type="radio" name="create-user-role" required checked={role === 'Verifier'} onChange={() => setRole('Verifier')} /><span>Verifier</span></label>
+                <label className="user-role-option"><input type="radio" name="create-user-role" required checked={role === 'Admin'} onChange={() => setRole('Admin')} /><span>Admin</span></label>
+              </div>
               {createError && <div className="auth-error" role="alert">{createError}</div>}
               <div className="user-modal-actions">
                 <button className="user-cancel-button" type="button" onClick={closeCreateForm} disabled={isSaving}>Cancel</button>
@@ -320,8 +416,8 @@ function UsersPage() {
             </div>
             <p className="user-modal-description">Set a new password for {passwordUser.firstName} {passwordUser.lastName}.</p>
             <form onSubmit={changeUserPassword}>
-              <label><span>New password</span><div className="user-password-field"><input required type={showNewPassword ? 'text' : 'password'} minLength={8} maxLength={100} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" autoFocus /><button className="password-toggle" type="button" onClick={() => setShowNewPassword((visible) => !visible)} aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}>{showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div></label>
-              <label><span>Confirm new password</span><div className="user-password-field"><input required type={showConfirmPassword ? 'text' : 'password'} minLength={8} maxLength={100} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} autoComplete="new-password" /><button className="password-toggle" type="button" onClick={() => setShowConfirmPassword((visible) => !visible)} aria-label={showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'}>{showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div></label>
+              <label><span>New password</span><div className="user-password-field"><input required type={showNewPassword ? 'text' : 'password'} minLength={6} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" autoFocus /><button className="password-toggle" type="button" onClick={() => setShowNewPassword((visible) => !visible)} aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}>{showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div></label>
+              <label><span>Confirm new password</span><div className="user-password-field"><input required type={showConfirmPassword ? 'text' : 'password'} minLength={6} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} autoComplete="new-password" /><button className="password-toggle" type="button" onClick={() => setShowConfirmPassword((visible) => !visible)} aria-label={showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'}>{showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div></label>
               {passwordError && <div className="auth-error" role="alert">{passwordError}</div>}
               <div className="user-modal-actions">
                 <button className="user-cancel-button" type="button" onClick={closePasswordForm} disabled={isChangingPassword}>Cancel</button>
@@ -335,19 +431,23 @@ function UsersPage() {
         <div className="user-modal-backdrop">
           <section className="user-modal" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
             <div className="user-modal-heading">
-              <div><p className="panel-kicker">User account</p><h2 id="edit-user-title">Edit name</h2></div>
+              <div><p className="panel-kicker">User account</p><h2 id="edit-user-title">Edit user</h2></div>
               <button className="icon-button" type="button" onClick={closeEditForm} aria-label="Close form"><X size={19} /></button>
             </div>
-            <p className="user-modal-description">Update the name for {editingUser.email}. Email address stays the same.</p>
-            <form onSubmit={updateUserName}>
+            <p className="user-modal-description">Update the name and roles for {editingUser.email}. Admin grants user-management access. Email address stays the same.</p>
+            <form onSubmit={updateUser}>
               <div className="auth-name-row">
-                <label><span>First name</span><input required maxLength={100} value={editFirstName} onChange={(event) => setEditFirstName(event.target.value)} autoFocus /></label>
-                <label><span>Last name</span><input required maxLength={100} value={editLastName} onChange={(event) => setEditLastName(event.target.value)} /></label>
+                <label><span>First name</span><input required maxLength={50} value={editFirstName} onChange={(event) => setEditFirstName(event.target.value)} autoFocus /></label>
+                <label><span>Last name</span><input required maxLength={50} value={editLastName} onChange={(event) => setEditLastName(event.target.value)} /></label>
+              </div>
+              <div className="user-role-options">
+                <label className="user-role-option"><input type="radio" name="edit-user-role" required checked={editRole === 'Verifier'} onChange={() => setEditRole('Verifier')} /><span>Verifier</span></label>
+                <label className="user-role-option"><input type="radio" name="edit-user-role" required checked={editRole === 'Admin'} onChange={() => setEditRole('Admin')} /><span>Admin</span></label>
               </div>
               {editError && <div className="auth-error" role="alert">{editError}</div>}
               <div className="user-modal-actions">
                 <button className="user-cancel-button" type="button" onClick={closeEditForm} disabled={isSavingEdit}>Cancel</button>
-                <button className="primary-button" type="submit" disabled={isSavingEdit}>{isSavingEdit ? 'Saving...' : 'Save name'}</button>
+                <button className="primary-button" type="submit" disabled={isSavingEdit}>{isSavingEdit ? 'Saving...' : 'Save changes'}</button>
               </div>
             </form>
           </section>

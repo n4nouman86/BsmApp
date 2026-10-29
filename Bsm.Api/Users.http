@@ -2,6 +2,65 @@
 @accessToken = replace-with-admin-access-token
 @userId = replace-with-user-id
 
+### Search users by name or email (requires Admin; omit search to list all)
+GET {{baseUrl}}/api/users?search=Demo
+Authorization: Bearer {{accessToken}}
+
+### Block a user immediately (requires Admin; cannot block yourself or last active Admin)
+PUT {{baseUrl}}/api/users/{{userId}}/blocked
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "isBlocked": true
+}
+
+### Unblock a user (old tokens remain revoked; requires fresh login)
+PUT {{baseUrl}}/api/users/{{userId}}/blocked
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "isBlocked": false
+}
+
+### Missing user returns 404
+PUT {{baseUrl}}/api/users/nonexistent-user/blocked
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "isBlocked": true
+}
+
+### Create a Verifier (requires an Admin access token)
+POST {{baseUrl}}/api/users
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Example",
+  "lastName": "Verifier",
+  "email": "verifier@example.test",
+  "password": "Example@12345",
+  "isVerifier": true,
+  "isAdmin": false
+}
+
+### Update user roles (requires an Admin access token)
+### Use false to remove a role; omit a role flag to preserve that assignment.
+PUT {{baseUrl}}/api/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Example",
+  "lastName": "Verifier",
+  "email": "verifier@example.test",
+  "isVerifier": true,
+  "isAdmin": false
+}
+
 ### Local development demo login (not available in production)
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json

@@ -85,6 +85,16 @@ test('Leads CRUD, SQL field limits, and ownership isolation', async () => {
     }
     assert.equal((await request('GET', path, admin)).status, 200)
     assert.ok((await request('GET', '/api/leads', admin)).data.some(lead => lead.id === id))
+    for (const search of [
+      `${payload.firstName} ${payload.lastName}`, payload.email, payload.phoneNumber,
+      payload.city, payload.state, status.name,
+    ]) {
+      const searchPath = `/api/leads?search=${encodeURIComponent(`  ${search}  `)}`
+      assert.ok((await request('GET', searchPath, a.token)).data.some(lead => lead.id === id))
+      assert.ok((await request('GET', searchPath, admin)).data.some(lead => lead.id === id))
+      assert.ok(!(await request('GET', searchPath, b.token)).data.some(lead => lead.id === id))
+    }
+    assert.deepEqual((await request('GET', `/api/leads?search=${randomUUID()}`, a.token)).data, [])
     const adminUpdate = await request('PUT', path, admin, { ...payload, firstName: 'Updated' })
     assert.equal(adminUpdate.status, 200)
     assert.equal(adminUpdate.data.appUserId, a.id)

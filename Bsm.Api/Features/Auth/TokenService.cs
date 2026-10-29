@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Globalization;
 using Bsm.Api.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -14,6 +15,8 @@ public interface ITokenService
 
 public sealed class TokenService(UserManager<ApplicationUser> userManager, IConfiguration configuration) : ITokenService
 {
+    public const string TokenVersionClaim = "token_version";
+
     public async Task<AuthResponse> CreateAsync(ApplicationUser user)
     {
         var jwt = configuration.GetSection("Jwt");
@@ -27,6 +30,7 @@ public sealed class TokenService(UserManager<ApplicationUser> userManager, IConf
             new(ClaimTypes.Name, user.UserName ?? user.Email ?? user.Id),
             new("first_name", user.FirstName),
             new("last_name", user.LastName),
+            new(TokenVersionClaim, user.TokenVersion.ToString(CultureInfo.InvariantCulture)),
         };
 
         var roles = await userManager.GetRolesAsync(user);

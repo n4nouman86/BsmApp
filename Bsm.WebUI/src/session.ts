@@ -12,6 +12,8 @@ export type DirectoryUser = {
   lastName: string
   email: string | null
   createdOn: string
+  roles: string[]
+  isBlocked: boolean
 }
 
 export const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:5049/api'

@@ -10,11 +10,10 @@ set `VITE_API_URL` when the API runs elsewhere.
 
 Run the API in `Development` and start this UI with `npm run dev`.
 The API seeds a local demo administrator with email `demo@bsmjoin.test`
-and initial password `Demo@12345`. The development login page shows these
-credentials. Sign in using the email address.
+and initial password `Demo@12345`. Sign in using the email address.
+The login page does not display demo credentials.
 
-Normal user password validation is unchanged. The API rejects this account
-outside `Development`, and production UI builds do not show the demo hint.
+The API rejects this account outside `Development`.
 These are public test credentials; never use this account for real data.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

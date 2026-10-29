@@ -10,6 +10,10 @@
 - `Bsm.WebUI/` is a React + TypeScript application built with Vite.
 - The Web UI calls the API at `http://localhost:5049/api` by default. Configure `VITE_API_URL` when the API has a different URL.
 - Admin user-management endpoints are protected by the `Admin` role.
+- Users directory search sends `GET /api/users?search=...` only on Enter, matching full name or email. Clearing the input and pressing Enter restores all users; typing alone does not filter or send requests.
+- Password creation/reset requires at least 6 characters only, with no case, digit, symbol, uniqueness or explicit maximum-length rules.
+- Admins can block/unblock users at `PUT /api/users/{id}/blocked`. Blocked users cannot log in; every protected API request checks `IsBlocked` and JWT `token_version` against the database. Blocking/unblocking increments `TokenVersion`, so old sessions remain revoked after unblock. Self-block and blocking the last unblocked Admin are rejected. Already-running requests are not cancelled.
+- Development startup ensures the `Admin` and `Verifier` Identity roles exist. User create/edit forms select one role via inline radios, Verifier first and default on create. API rejects simultaneous Admin/Verifier assignments; omitted role flags preserve existing assignments on update. `Verifier` has no additional permissions.
 - Leads map the existing `dbo.Leads` table. Signed-in users manage their own leads; Admin can manage all leads. New leads belong to their creator, and deletion is permanent after confirmation. Every lead has a required `StatusId` FK to `dbo.LeadStatuses`.
 - Lead statuses map `dbo.LeadStatuses` (`/api/leadstatuses`): everyone can read; only Admin can create, edit or delete. Deleting a status that leads still use returns 409.
 
@@ -24,6 +28,9 @@
 ## Development
 
 - Run the API from the repository root: `dotnet run --project Bsm.Api/Bsm.Api.csproj --launch-profile http`.
+- Before deploying user blocking, run `Bsm.Api/Identity/AddUserBlocking.sql` against the Identity database. The idempotent script adds `IsBlocked` and `TokenVersion` with safe defaults for existing users. Tokens issued before this change lack a version and require fresh login.
+- User first/last names are limited to 50 characters in SQL, EF, API validation and forms. Apply `Bsm.Api/Identity/LimitUserNames.sql` to existing databases; it rejects overlength data rather than truncating it.
+- User `CreatedOn` is stored as UTC `datetime2(7)` with an EF converter preserving `DateTimeOffset` API responses. Apply `Bsm.Api/Identity/ConvertUserCreatedOn.sql` to existing databases; it normalizes offsets to UTC before conversion. Identity `LockoutEnd` remains `datetimeoffset`.
 - Run the Web UI from `Bsm.WebUI/`: `npm run dev`.
 - Build and lint the Web UI from `Bsm.WebUI/`: `npm run build` and `npm run lint`.
 - Build the API from the repository root: `dotnet build Bsm.Api/Bsm.Api.csproj`.

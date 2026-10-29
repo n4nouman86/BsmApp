@@ -5,6 +5,7 @@ using Bsm.Api.Features.Leads;
 using Bsm.Api.Features.DncNames;
 using Bsm.Api.Features.DncNumbers;
 using Bsm.Api.Features.LeadStatuses;
+using Bsm.Api.Features.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IUserBlockingService, UserBlockingService>();
 builder.Services.Configure<TcpaOptions>(builder.Configuration.GetSection("Tcpa"));
 builder.Services.AddHttpClient<ITcpaService, TcpaService>(client => client.Timeout = TimeSpan.FromSeconds(15));
 builder.Services.AddScoped<ILeadService, LeadService>();
@@ -30,7 +32,15 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    options.Password.RequiredLength = 6;
+    options.Password.RequireDigit = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredUniqueChars = 0;
+})
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
@@ -61,15 +71,27 @@ builder.Services.AddAuthentication(options =>
         // Sliding expiration: once half of the token's lifetime has passed, hand the client a fresh token.
         OnTokenValidated = async context =>
         {
+            var userId = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var versionClaim = context.Principal?.FindFirst(TokenService.TokenVersionClaim)?.Value;
+            if (userId is null || !int.TryParse(versionClaim, out var tokenVersion))
+            {
+                context.Fail("Invalid session.");
+                return;
+            }
+
+            var dbContext = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+            var user = await dbContext.Users.AsNoTracking()
+                .SingleOrDefaultAsync(user => user.Id == userId, context.HttpContext.RequestAborted);
+            if (user is null || user.IsBlocked || user.TokenVersion != tokenVersion)
+            {
+                context.Fail("Session revoked.");
+                return;
+            }
+
             var token = context.SecurityToken;
             if (token.ValidFrom == DateTime.MinValue) return;
             var lifetime = token.ValidTo - token.ValidFrom;
             if (DateTime.UtcNow - token.ValidFrom < lifetime / 2) return;
-
-            var userId = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (userId is null) return;
-            var user = await context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>().FindByIdAsync(userId);
-            if (user is null) { context.Fail("User no longer exists."); return; }
 
             var refreshed = await context.HttpContext.RequestServices.GetRequiredService<ITokenService>().CreateAsync(user);
             context.Response.Headers["X-Refreshed-Token"] = refreshed.AccessToken;
@@ -80,7 +102,12 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("WebUi", policy => policy
-        .WithOrigins("http://localhost:5173", "https://localhost:5173", "http://localhost:5174")
+        .WithOrigins(
+            "http://localhost:5173",
+            "https://localhost:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5174")
         .AllowAnyHeader()
         .AllowAnyMethod()
         .WithExposedHeaders("X-Refreshed-Token"));
@@ -125,12 +152,15 @@ static async Task SeedDevelopmentAdminAsync(WebApplication app)
     var email = adminSettings["Email"]!;
     const string adminRole = "Admin";
 
-    if (!await roleManager.RoleExistsAsync(adminRole))
+    foreach (var role in new[] { adminRole, "Verifier" })
     {
-        var roleResult = await roleManager.CreateAsync(new IdentityRole(adminRole));
-        if (!roleResult.Succeeded)
+        if (!await roleManager.RoleExistsAsync(role))
         {
-            throw new InvalidOperationException(string.Join("; ", roleResult.Errors.Select(error => error.Description)));
+            var roleResult = await roleManager.CreateAsync(new IdentityRole(role));
+            if (!roleResult.Succeeded)
+            {
+                throw new InvalidOperationException(string.Join("; ", roleResult.Errors.Select(error => error.Description)));
+            }
         }
     }
 

@@ -5,7 +5,7 @@ namespace Bsm.Api.Features.Leads;
 
 public interface ILeadService
 {
-    Task<IReadOnlyList<LeadResponse>> GetAllAsync(string userId, bool isAdmin, CancellationToken cancellationToken);
+    Task<IReadOnlyList<LeadResponse>> GetAllAsync(string userId, bool isAdmin, CancellationToken cancellationToken, string? search = null);
     Task<LeadResponse?> GetByIdAsync(int id, string userId, bool isAdmin, CancellationToken cancellationToken);
     Task<LeadResponse> CreateAsync(SaveLeadRequest request, string userId, CancellationToken cancellationToken);
     Task<LeadResponse?> UpdateAsync(int id, SaveLeadRequest request, string userId, bool isAdmin, CancellationToken cancellationToken);
@@ -28,9 +28,23 @@ public sealed class LeadService(ApplicationDbContext db) : ILeadService
         return ToResponse(lead, statusName);
     }
 
-    public async Task<IReadOnlyList<LeadResponse>> GetAllAsync(string userId, bool isAdmin, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<LeadResponse>> GetAllAsync(
+        string userId, bool isAdmin, CancellationToken cancellationToken, string? search = null)
     {
-        var leads = await VisibleLeads(userId, isAdmin).AsNoTracking().Include(lead => lead.Status)
+        var query = VisibleLeads(userId, isAdmin).AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(lead =>
+                (lead.FirstName + " " + lead.LastName).Contains(term)
+                || lead.Email.Contains(term)
+                || lead.PhoneNumber.Contains(term)
+                || (lead.City != null && lead.City.Contains(term))
+                || lead.State.Contains(term)
+                || lead.Status!.Name.Contains(term));
+        }
+
+        var leads = await query.Include(lead => lead.Status)
             .OrderByDescending(lead => lead.CreatedOn).ThenByDescending(lead => lead.Id)
             .ToListAsync(cancellationToken);
         return leads.Select(lead => ToResponse(lead, lead.Status!.Name)).ToArray();

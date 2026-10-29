@@ -13,11 +13,12 @@ public sealed class LeadsController(ILeadService service, ITcpaService tcpa) : A
     [EndpointSummary("List leads owned by the current user, or all leads for administrators.")]
     [ProducesResponseType<IReadOnlyList<LeadResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<IReadOnlyList<LeadResponse>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<LeadResponse>>> GetAll(
+        CancellationToken cancellationToken, [FromQuery] string? search = null)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
-        return Ok(await service.GetAllAsync(userId, User.IsInRole("Admin"), cancellationToken));
+        return Ok(await service.GetAllAsync(userId, User.IsInRole("Admin"), cancellationToken, search));
     }
 
     [HttpGet("{id:int}")]
